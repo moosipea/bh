@@ -1,4 +1,6 @@
-GLFW_SOURCE_DIR := glfw
+$(DEPENDENCIES) := external
+
+GLFW_SOURCE_DIR := $(DEPENDENCIES)/glfw
 GLFW_BUILD_DIR := $(GLFW_SOURCE_DIR)/$(OS)_build
 GLFW_LIB := $(GLFW_BUILD_DIR)/src/libglfw3.a
 
