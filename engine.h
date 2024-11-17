@@ -27,6 +27,7 @@ struct bh_sprite {
 };
 
 /* Must match the size of the uniform array in the vertex shader. */
+/* Should probably switch to a SSBO in the future. */
 #define BH_BATCH_SIZE 128
 
 struct bh_sprite_batch {
