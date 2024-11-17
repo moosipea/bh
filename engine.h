@@ -27,7 +27,7 @@ struct bh_sprite {
 };
 
 /* Must match the size of the uniform array in the vertex shader. */
-#define BH_BATCH_SIZE 256
+#define BH_BATCH_SIZE 128
 
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;

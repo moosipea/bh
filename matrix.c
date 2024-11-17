@@ -32,6 +32,19 @@ void m4_scale(m4 matrix, float x, float y, float z) {
 
 void m4_rotation(m4 matrix, float x, float y, float z);
 
+void m4_ortho(m4 matrix, float left, float right, float top, float bottom, float near, float far) {
+    m4_scale(matrix, bottom/right, 1.0, 1.0);
+
+
+    //m4_scale(matrix, 2.0f / (right - left), 2.0f / (top - bottom), 2.0f / (far - near));
+
+    // m4 translation;
+    // m4_translation(translation, -(left + right) / 2.0, -(top + bottom) / 2.0f, -(far + near) / 2.0f);
+    // translation[2][2] = -1.0f;
+
+    // m4_multiply(matrix, translation);
+}
+
 void m4_multiply(m4 dest, m4 mat) {
     m4 res;
     for (size_t i = 0; i < 4; i++) {

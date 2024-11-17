@@ -106,9 +106,9 @@ struct bh_sprite_batch batch_init(void) {
     /* For use with GL_TRIANGLE_FAN */
     const GLfloat vertices[] = {
         -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f
+         1.0f, -1.0f, 0.0f,
+         1.0f,  1.0f, 0.0f,
+        -1.0f,  1.0f, 0.0f
     };
 
     res.mesh = upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
@@ -129,7 +129,7 @@ void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
     glUseProgram(program);
 
     /* Instance specific data */
-    GLuint uniform = glGetUniformLocation(program, "transforms");
+    GLint uniform = glGetUniformLocation(program, "transforms");
     glUniformMatrix4fv(uniform, batch->count, GL_FALSE, (const GLfloat*)batch->instances);
 
     /* Draw call */

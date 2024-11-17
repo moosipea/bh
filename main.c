@@ -12,8 +12,11 @@
 #define TEST_SPRITES 1024
 
 struct bh_context {
+    int width;
+    int height;
     GLFWwindow *window;
     bh_program program;
+    m4 projection_matrix;
     struct bh_sprite sprites[TEST_SPRITES];
     struct bh_sprite_batch batch;
 };
@@ -45,7 +48,7 @@ static inline bool init_gl(struct bh_context *context) {
         return false;
     }
 
-    context->window = glfwCreateWindow(640, 480, "Hello, world!", NULL, NULL);
+    context->window = glfwCreateWindow(context->width, context->height, "Hello, world!", NULL, NULL);
     if (!context->window) {
         error("Window creation failed");
         return false;
@@ -106,7 +109,16 @@ static inline void generate_random_sprites(struct bh_context *context) {
     }
 }
 
+static void update_projection_matrix(struct bh_context *context) {
+    m4_ortho(context->projection_matrix, 1.0f, context->width, 1.0f, context->height, 0.001f, 1000.0f);
+    GLint projection_matrix_uniform = glGetUniformLocation(context->program, "projection_matrix");
+    glUniformMatrix4fv(projection_matrix_uniform, 1, GL_FALSE, (const GLfloat*) context->projection_matrix);
+}
+
 static inline bool init_context(struct bh_context *context) {
+    context->width = 640;
+    context->height = 480;
+
     if (!init_gl(context)) {
         return false;
     }
@@ -118,11 +130,25 @@ static inline bool init_context(struct bh_context *context) {
     generate_random_sprites(context);
     context->batch = batch_init();
 
+    update_projection_matrix(context);
+
     return true;
 }
 
-static inline void pre_frame() {
+static inline void pre_frame(struct bh_context *context) {
     glfwPollEvents();
+    
+    int width, height;
+    glfwGetFramebufferSize(context->window, &width, &height);
+
+    if (width != context->width || height != context->height) {
+        context->width = width;
+        context->height = height;
+        glViewport(0, 0, context->width, context->height);
+        update_projection_matrix(context);
+        printf("Resize: %dx%d\n", width, height);
+    }
+
     glClearColor(0.1, 0.2, 0.3, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -131,10 +157,9 @@ static inline void post_frame(struct bh_context *context) {
     glfwSwapBuffers(context->window);
 }
 
-
 static inline void main_loop(struct bh_context *context) {
     while (!glfwWindowShouldClose(context->window)) {
-        pre_frame();
+        pre_frame(context);
 
         /* Draw */
         for (size_t i = 0; i < TEST_SPRITES; i++) {
