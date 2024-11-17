@@ -9,5 +9,6 @@ void m4_identity(m4 matrix);
 void m4_translation(m4 matrix, float x, float y, float z);
 void m4_scale(m4 matrix, float x, float y, float z);
 void m4_rotation(m4 matrix, float x, float y, float z);
+void m4_multiply(m4 dest, m4 mat);
 
 #endif // !BH_MATRIX_H

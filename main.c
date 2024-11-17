@@ -9,10 +9,16 @@
 #include "error_macro.h"
 #include "engine.h"
 
+#define BATCH_SIZE 256
+
 struct bh_context {
     GLFWwindow *window;
     bh_program program;
     struct bh_mesh_handle square_mesh;
+    struct {
+        m4 transforms[BATCH_SIZE]; 
+        size_t count;
+    } batch;
 };
 
 static char *read_file(const char *path) {
@@ -87,7 +93,9 @@ static inline bool init_shaders(struct bh_context *context) {
         goto end;
     }
 
-    if (!(context->program = create_program(vertex_src, fragment_src))) {
+    if ((context->program = create_program(vertex_src, fragment_src))) {
+        glUseProgram(context->program);
+    } else {
         success = false;
         goto end;
     }
@@ -96,6 +104,26 @@ end:
     free(vertex_src);
     free(fragment_src);
     return success;
+}
+
+static inline float uniform_rand(void) {
+    return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f;
+}
+
+void generate_random_batch(struct bh_context *context) {
+    const size_t n = BATCH_SIZE;
+    for (size_t i = 0; i < BATCH_SIZE && i < n; i++) {
+        m4_scale(context->batch.transforms[i], 0.025f, 0.025f, 0.025f);
+
+        m4 translation;
+        m4_translation(translation, uniform_rand(), uniform_rand(), uniform_rand());
+        m4_multiply(context->batch.transforms[i], translation);
+
+        context->batch.count++;
+    }
+    
+    GLuint uniform = glGetUniformLocation(context->program, "transforms");
+    glUniformMatrix4fv(uniform, context->batch.count, GL_FALSE, (const GLfloat*)context->batch.transforms);
 }
 
 static inline bool init_context(struct bh_context *context) {
@@ -108,22 +136,31 @@ static inline bool init_context(struct bh_context *context) {
     }
 
     context->square_mesh = upload_square_mesh();
+    generate_random_batch(context);
 
     return true;
 }
 
+static inline void pre_frame() {
+    glfwPollEvents();
+    glClearColor(0.1, 0.2, 0.3, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+}
+
+static inline void post_frame(struct bh_context *context) {
+    glfwSwapBuffers(context->window);
+}
+
+
 static inline void main_loop(struct bh_context *context) {
     while (!glfwWindowShouldClose(context->window)) {
-        glfwPollEvents();
-
-        glClearColor(0.1, 0.2, 0.3, 1.0);
-        glClear(GL_COLOR_BUFFER_BIT);
+        pre_frame();
 
         glBindVertexArray(context->square_mesh.vao_handle);
         glEnableVertexAttribArray(0);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, context->batch.count);
 
-        glfwSwapBuffers(context->window);
+        post_frame(context);
     }
 }
 
