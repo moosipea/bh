@@ -1,0 +1,13 @@
+#ifndef BH_MATRIX_H
+#define BH_MATRIX_H
+
+#include <glad/gl.h>
+
+typedef GLfloat m4[4][4];
+
+void m4_identity(m4 matrix);
+void m4_translation(m4 matrix, float x, float y, float z);
+void m4_scale(m4 matrix, float x, float y, float z);
+void m4_rotation(m4 matrix, float x, float y, float z);
+
+#endif // !BH_MATRIX_H

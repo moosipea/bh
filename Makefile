@@ -22,6 +22,8 @@ CC := gcc
 BINARY := main
 CFLAGS := -Wall -Wextra -pedantic -ggdb
 	  
+OBJECTS := main.o engine.o matrix.o
+
 INCLUDES := -I$(GLFW_SOURCE_DIR)/include \
 	    -I$(GLAD_BUILD_DIR)/include
 
@@ -42,7 +44,7 @@ ifeq ($(OS),Windows_NT)
 	RM := del /F
 endif
 
-$(BINARY): main.o
+$(BINARY): $(OBJECTS)
 	$(CC) -o $@ $^ $(LIB_DIRS) $(LIBS)
 
 %.o: %.c
