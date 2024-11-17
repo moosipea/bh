@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "error_macro.h"
 
@@ -97,4 +98,46 @@ struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count) {
     glBindVertexArray(0);
 
     return res;
+}
+
+struct bh_sprite_batch batch_init(void) {
+    struct bh_sprite_batch res = {0};
+
+    /* For use with GL_TRIANGLE_FAN */
+    const GLfloat vertices[] = {
+        -1.0f, -1.0f, 0.0f,
+        1.0f, -1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f
+    };
+
+    res.mesh = upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
+    return res;
+}
+
+void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program) {
+    /* Insert sprite data into batch array */
+    memcpy(batch->instances[batch->count++], sprite.transform, sizeof(m4));
+
+    /* Draw the batch when it is full */
+    if (batch->count >= BH_BATCH_SIZE) {
+        batch_finish(batch, program);
+    }
+}
+
+void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
+    glUseProgram(program);
+
+    /* Instance specific data */
+    GLuint uniform = glGetUniformLocation(program, "transforms");
+    glUniformMatrix4fv(uniform, batch->count, GL_FALSE, (const GLfloat*)batch->instances);
+
+    /* Draw call */
+    glBindVertexArray(batch->mesh.vao_handle);
+    glEnableVertexAttribArray(0);
+    glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, batch->count);
+    glDisableVertexAttribArray(0);
+
+    /* Reset batch state */
+    batch->count = 0;
 }

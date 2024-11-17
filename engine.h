@@ -22,8 +22,21 @@ struct bh_mesh_handle {
 struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count);
 
 struct bh_sprite {
-    bh_texture texture; 
+    // bh_texture texture; 
     m4 transform;
 };
+
+/* Must match the size of the uniform array in the vertex shader. */
+#define BH_BATCH_SIZE 256
+
+struct bh_sprite_batch {
+    struct bh_mesh_handle mesh;
+    m4 instances[BH_BATCH_SIZE];
+    size_t count;
+};
+
+struct bh_sprite_batch batch_init(void);
+void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program);
+void batch_finish(struct bh_sprite_batch *batch, bh_program program);
 
 #endif // !BH_ENGINE_H

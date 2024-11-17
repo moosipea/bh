@@ -9,16 +9,13 @@
 #include "error_macro.h"
 #include "engine.h"
 
-#define BATCH_SIZE 256
+#define TEST_SPRITES 1024
 
 struct bh_context {
     GLFWwindow *window;
     bh_program program;
-    struct bh_mesh_handle square_mesh;
-    struct {
-        m4 transforms[BATCH_SIZE]; 
-        size_t count;
-    } batch;
+    struct bh_sprite sprites[TEST_SPRITES];
+    struct bh_sprite_batch batch;
 };
 
 static char *read_file(const char *path) {
@@ -40,17 +37,6 @@ static char *read_file(const char *path) {
     fclose(file);
 
     return buffer;
-}
-
-static inline struct bh_mesh_handle upload_square_mesh(void) {
-    /* For use with GL_TRIANGLE_FAN */
-    const GLfloat vertices[] = {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f
-    };
-    return upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
 }
 
 static inline bool init_gl(struct bh_context *context) {
@@ -110,20 +96,14 @@ static inline float uniform_rand(void) {
     return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f;
 }
 
-void generate_random_batch(struct bh_context *context) {
-    const size_t n = BATCH_SIZE;
-    for (size_t i = 0; i < BATCH_SIZE && i < n; i++) {
-        m4_scale(context->batch.transforms[i], 0.025f, 0.025f, 0.025f);
+static inline void generate_random_sprites(struct bh_context *context) {
+    for (size_t i = 0; i < TEST_SPRITES; i++) {
+        m4_scale(context->sprites[i].transform, 0.025f, 0.025f, 0.025f);
 
         m4 translation;
         m4_translation(translation, uniform_rand(), uniform_rand(), uniform_rand());
-        m4_multiply(context->batch.transforms[i], translation);
-
-        context->batch.count++;
+        m4_multiply(context->sprites[i].transform, translation);
     }
-    
-    GLuint uniform = glGetUniformLocation(context->program, "transforms");
-    glUniformMatrix4fv(uniform, context->batch.count, GL_FALSE, (const GLfloat*)context->batch.transforms);
 }
 
 static inline bool init_context(struct bh_context *context) {
@@ -135,8 +115,8 @@ static inline bool init_context(struct bh_context *context) {
         return false;
     }
 
-    context->square_mesh = upload_square_mesh();
-    generate_random_batch(context);
+    generate_random_sprites(context);
+    context->batch = batch_init();
 
     return true;
 }
@@ -156,9 +136,11 @@ static inline void main_loop(struct bh_context *context) {
     while (!glfwWindowShouldClose(context->window)) {
         pre_frame();
 
-        glBindVertexArray(context->square_mesh.vao_handle);
-        glEnableVertexAttribArray(0);
-        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, context->batch.count);
+        /* Draw */
+        for (size_t i = 0; i < TEST_SPRITES; i++) {
+            batch_render(&context->batch, context->sprites[i], context->program); 
+        }
+        batch_finish(&context->batch, context->program);
 
         post_frame(context);
     }
