@@ -47,7 +47,7 @@ static inline bool init_gl(struct bh_context *context) {
 }
 
 static inline bool init_shaders(struct bh_context *context) {
-    if ((context->program = create_program(ASSET_vertex, ASSET_fragment))) {
+    if ((context->program = create_program((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment))) {
         glUseProgram(context->program);
         return true;
     }

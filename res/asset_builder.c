@@ -45,14 +45,14 @@ static void write_file(FILE *header, const char *dir_name, const char *file_name
     memcpy(name, file_name, NAME_MAX);
     remove_extension(name, NAME_MAX);
 
-    fprintf(header, "const char ASSET_%s[] = { ", name);
+    fprintf(header, "const unsigned char ASSET_%s[] = { ", name);
 
     char full_path[2 * NAME_MAX + 1];
     strcpy(full_path, dir_name);
     strcat(full_path, "/");
     strcat(full_path, file_name);
 
-    FILE *file = fopen(full_path, "r");
+    FILE *file = fopen(full_path, "rb");
     if (file == NULL) {
         fprintf(stderr, "Couldn't open file `%s`\n", full_path);
         return;
