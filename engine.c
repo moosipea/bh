@@ -21,6 +21,7 @@ static bool compile_shader(bh_shader shader, const GLchar *src) {
             glGetShaderInfoLog(shader, log_length, NULL, log_buffer);
             error("Shader compilation error: %s\n", log_buffer);
             free(log_buffer);
+            error("Dumping shader source:\n%s\n", src);
         }
         return false;
     }
