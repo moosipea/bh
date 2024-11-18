@@ -13,3 +13,15 @@ $(HEADER): assets $(EXECUTABLE)
 
 $(EXECUTABLE): asset_builder.o
 	$(CC) -o $@ $^
+
+RM := rm -f
+ifeq ($(OS),Windows_NT)
+	RM := del /F
+endif
+
+.PHONY: clean
+clean:
+	$(RM) $(EXECUTABLE)
+	$(RM) $(EXECUTALBE).exe
+	$(RM) $(HEADER)
+	$(RM) $(wildcard *.o)

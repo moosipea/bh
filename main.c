@@ -8,6 +8,7 @@
 
 #include "error_macro.h"
 #include "engine.h"
+#include "res/built_assets.h"
 
 #define TEST_SPRITES 1024
 
@@ -20,27 +21,6 @@ struct bh_context {
     struct bh_sprite sprites[TEST_SPRITES];
     struct bh_sprite_batch batch;
 };
-
-static char *read_file(const char *path) {
-    FILE *file = fopen(path, "r");
-    
-    if (file == NULL) {
-        error("Couldn't open file `%s`", path);
-        return NULL;
-    }
-
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    rewind(file);
-
-    char *buffer = malloc(size + 1);
-    fread(buffer, 1, size, file);
-    buffer[size] = '\0';
-
-    fclose(file);
-
-    return buffer;
-}
 
 static inline bool init_gl(struct bh_context *context) {
     if (!glfwInit()) {
@@ -67,32 +47,11 @@ static inline bool init_gl(struct bh_context *context) {
 }
 
 static inline bool init_shaders(struct bh_context *context) {
-    bool success = true;
-    
-    char *vertex_src = NULL;
-    char *fragment_src = NULL;
-
-    if ((vertex_src = read_file("vertex.glsl")) == NULL) {
-        success = false;
-        goto end;
-    }
-
-    if ((fragment_src = read_file("fragment.glsl")) == NULL) {
-        success = false;
-        goto end;
-    }
-
-    if ((context->program = create_program(vertex_src, fragment_src))) {
+    if ((context->program = create_program(ASSET_vertex, ASSET_fragment))) {
         glUseProgram(context->program);
-    } else {
-        success = false;
-        goto end;
+        return true;
     }
-
-end:
-    free(vertex_src);
-    free(fragment_src);
-    return success;
+    return false;
 }
 
 static inline float uniform_rand(void) {

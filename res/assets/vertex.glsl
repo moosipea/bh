@@ -1,12 +1,4 @@
-#version 330 core
-layout (location = 0) in vec3 aPos;
+#ifndef BUILT_ASSETS_H
+#define BUILT_ASSETS_H
 
-uniform mat4 transforms[128];
-uniform mat4 projection_matrix;
-
-void main() {
-    vec4 pos = projection_matrix * transforms[gl_InstanceID] * vec4(aPos, 1.0);
-    // vec4 pos = transforms[gl_InstanceID] * vec4(aPos, 1.0);
-    gl_Position = pos; 
-} 
-
+#endif // !BUILT_ASSETS_H

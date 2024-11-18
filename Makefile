@@ -44,8 +44,11 @@ ifeq ($(OS),Windows_NT)
 	RM := del /F
 endif
 
-$(BINARY): $(OBJECTS)
-	$(CC) -o $@ $^ $(LIB_DIRS) $(LIBS)
+$(BINARY): res/built_assets.h $(OBJECTS) 
+	$(CC) -o $@ $(OBJECTS) $(LIB_DIRS) $(LIBS)
+
+res/built_assets.h:
+	$(MAKE) -C res
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $<
@@ -70,3 +73,4 @@ clean:
 	$(RM) $(BINARY)
 	$(RM) $(BINARY).exe
 	$(RM) $(wildcard *.o)
+	$(MAKE) -C res clean
