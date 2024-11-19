@@ -12,7 +12,7 @@ ifeq ($(OS),Windows_NT)
 	PYTHON := python
 endif
 
-GL_VERSION := gl:core=4.0
+GL_VERSION := gl:core=4.6
 GLAD_SOURCE_DIR := $(DEPENDENCIES_DIR)/glad
 GLAD_BUILD_DIR_NAME := build
 GLAD_BUILD_DIR := $(GLAD_SOURCE_DIR)/$(GLAD_BUILD_DIR_NAME)

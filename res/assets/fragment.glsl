@@ -1,9 +1,9 @@
-#version 400 core
+#version 460 core
 
 #extension GL_ARB_bindless_texture : require
 
 in vec2 fUVs;
-in int fInstance;
+in uvec2 fTextureID;
 
 out vec4 FragColor;
   

@@ -22,7 +22,7 @@ struct bh_mesh_handle {
 struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count);
 
 struct bh_sprite {
-    // GLuint64 texture_handle;
+    GLuint64 texture_handle;
     m4 transform;
 };
 
@@ -32,9 +32,12 @@ struct bh_textures {
     bh_texture texture_ids[BH_MAX_TEXTURES];
     GLuint64 texture_handles[BH_MAX_TEXTURES];
     size_t count;
+    GLuint textures_ssbo;
 };
 
-GLuint64 load_texture(struct bh_textures *textures, void *png_data, size_t size);
+struct bh_textures textures_init(void);
+GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size);
+void textures_delete(struct bh_textures textures);
 
 /* Must match the size of the uniform array in the vertex shader. */
 /* Should probably switch to a SSBO in the future. */
@@ -42,12 +45,14 @@ GLuint64 load_texture(struct bh_textures *textures, void *png_data, size_t size)
 
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;
-    m4 instances[BH_BATCH_SIZE];
+    struct bh_sprite instances[BH_BATCH_SIZE];
     size_t count;
+    GLuint instances_ssbo;
 };
 
 struct bh_sprite_batch batch_init(void);
-void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program);
-void batch_finish(struct bh_sprite_batch *batch, bh_program program);
+void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program, struct bh_textures *textures);
+void batch_finish(struct bh_sprite_batch *batch, bh_program program, struct bh_textures *textures);
+void batch_delete(struct bh_sprite_batch batch);
 
 #endif // !BH_ENGINE_H

@@ -20,6 +20,8 @@ struct bh_context {
     m4 projection_matrix;
     struct bh_sprite sprites[TEST_SPRITES];
     struct bh_sprite_batch batch;
+    struct bh_textures textures;
+    GLuint64 bulb_texture;
 };
 
 static inline bool init_gl(struct bh_context *context) {
@@ -60,6 +62,7 @@ static inline float uniform_rand(void) {
 
 static inline void generate_random_sprites(struct bh_context *context) {
     for (size_t i = 0; i < TEST_SPRITES; i++) {
+        context->sprites[i].texture_handle = context->bulb_texture;
         m4_scale(context->sprites[i].transform, 0.025f, 0.025f, 0.025f);
 
         m4 translation;
@@ -86,8 +89,11 @@ static inline bool init_context(struct bh_context *context) {
         return false;
     }
 
-    generate_random_sprites(context);
     context->batch = batch_init();
+    context->textures = textures_init();
+    context->bulb_texture = textures_load(&context->textures, (void*)ASSET_bulb, sizeof(ASSET_bulb) - 1);
+
+    generate_random_sprites(context);
 
     update_projection_matrix(context);
 
@@ -122,15 +128,17 @@ static inline void main_loop(struct bh_context *context) {
 
         /* Draw */
         for (size_t i = 0; i < TEST_SPRITES; i++) {
-            batch_render(&context->batch, context->sprites[i], context->program); 
+            batch_render(&context->batch, context->sprites[i], context->program, &context->textures); 
         }
-        batch_finish(&context->batch, context->program);
+        batch_finish(&context->batch, context->program, &context->textures);
 
         post_frame(context);
     }
 }
 
 static inline void delete_context(struct bh_context context) {
+    textures_delete(context.textures);
+    batch_delete(context.batch);
     delete_program(&context.program);
     glfwDestroyWindow(context.window);
     glfwTerminate();
