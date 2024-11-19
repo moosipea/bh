@@ -1,4 +1,10 @@
 #version 400 core
+
+#extension GL_ARB_bindless_texture : require
+
+in vec2 fUVs;
+in int fInstance;
+
 out vec4 FragColor;
   
 void main() {

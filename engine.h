@@ -22,11 +22,19 @@ struct bh_mesh_handle {
 struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count);
 
 struct bh_sprite {
-    // bh_texture texture; 
+    // GLuint64 texture_handle;
     m4 transform;
 };
 
-bh_texture upload_texture(void);
+#define BH_MAX_TEXTURES 128
+
+struct bh_textures {
+    bh_texture texture_ids[BH_MAX_TEXTURES];
+    GLuint64 texture_handles[BH_MAX_TEXTURES];
+    size_t count;
+};
+
+GLuint64 load_texture(struct bh_textures *textures, void *png_data, size_t size);
 
 /* Must match the size of the uniform array in the vertex shader. */
 /* Should probably switch to a SSBO in the future. */
