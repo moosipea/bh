@@ -26,6 +26,8 @@ struct bh_sprite {
     m4 transform;
 };
 
+bh_texture upload_texture(void);
+
 /* Must match the size of the uniform array in the vertex shader. */
 /* Should probably switch to a SSBO in the future. */
 #define BH_BATCH_SIZE 128
