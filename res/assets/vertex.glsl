@@ -1,27 +1,20 @@
 #version 460 core
 
-struct sprite {
-    sampler2D texture_handle;
-    mat4 transform;   
-};
-
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aUVs;
 
 uniform mat4 projection_matrix;
 
 layout(binding = 2, std430) readonly buffer ssbo1 {
-    struct sprite sprite_data[];
+    mat4 sprite_matrices[];
 };
 
 out vec2 fUVs;
-out sampler2D fTexture;
+flat out int fInstance;
 
 void main() {
-    vec4 pos = projection_matrix * model_matrices[gl_InstanceID].transform * vec4(aPos, 1.0);
-    gl_Position = pos;
-
+    gl_Position = projection_matrix * sprite_matrices[gl_InstanceID] * vec4(aPos, 1.0);
     fUVs = aUVs;
-    fTexture = sprite_data[gl_InstanceID].texture_handle;
+    fInstance = gl_InstanceID;
 }
 

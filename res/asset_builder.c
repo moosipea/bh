@@ -60,6 +60,8 @@ static void write_file(FILE *header, const char *dir_name, const char *file_name
     
     write_file_data(header, file);
 
+    printf("Generated asset for `%s`\n", file_name);
+
     fclose(file); 
     fputs(" };\n\n", header);
 }

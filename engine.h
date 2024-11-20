@@ -32,11 +32,9 @@ struct bh_textures {
     bh_texture texture_ids[BH_MAX_TEXTURES];
     GLuint64 texture_handles[BH_MAX_TEXTURES];
     size_t count;
-    GLuint textures_ssbo;
 };
 
 GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size);
-void textures_delete(struct bh_textures textures);
 
 /* Must match the size of the uniform array in the vertex shader. */
 /* Should probably switch to a SSBO in the future. */
@@ -44,9 +42,11 @@ void textures_delete(struct bh_textures textures);
 
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;
-    struct bh_sprite instances[BH_BATCH_SIZE];
+    m4 instance_transforms[BH_BATCH_SIZE];
+    GLuint64 instance_textures[BH_BATCH_SIZE];
     size_t count;
     GLuint instances_ssbo;
+    GLuint textures_ssbo;
 };
 
 struct bh_sprite_batch batch_init(void);

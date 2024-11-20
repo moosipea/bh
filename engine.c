@@ -96,9 +96,10 @@ struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count) {
     glBufferData(GL_ARRAY_BUFFER, count*sizeof(GLfloat), vertices, GL_STATIC_DRAW);
     
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), 0);
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), (void*)sizeof(GLfloat));
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(GLfloat), (void*)(3*sizeof(GLfloat)));
 
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0); 
@@ -185,10 +186,6 @@ GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size
     return texture_handle;
 }
 
-void textures_delete(struct bh_textures textures) {
-    glDeleteBuffers(1, &textures.textures_ssbo);
-}
-
 struct bh_sprite_batch batch_init(void) {
     struct bh_sprite_batch res = {0};
 
@@ -204,18 +201,24 @@ struct bh_sprite_batch batch_init(void) {
     res.mesh = upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
 
     glCreateBuffers(1, &res.instances_ssbo);
-    glNamedBufferStorage(res.instances_ssbo, sizeof(res.instances), res.instances, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferStorage(res.instances_ssbo, sizeof(res.instance_transforms), res.instance_transforms, GL_DYNAMIC_STORAGE_BIT);
+
+    glCreateBuffers(1, &res.textures_ssbo);
+    glNamedBufferStorage(res.textures_ssbo, sizeof(res.instance_textures), res.instance_textures, GL_DYNAMIC_STORAGE_BIT);
 
     return res;
 }
 
 void batch_delete(struct bh_sprite_batch batch) {
+    glDeleteBuffers(1, &batch.textures_ssbo);
     glDeleteBuffers(1, &batch.instances_ssbo);
 }
 
 void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program) {
     /* Insert sprite data into batch array */
-    batch->instances[batch->count++] = sprite;
+    memcpy(&batch->instance_transforms[batch->count], &sprite.transform, sizeof(m4));
+    batch->instance_textures[batch->count] = sprite.texture_handle;
+    batch->count++;
 
     /* Draw the batch when it is full */
     if (batch->count >= BH_BATCH_SIZE) {
@@ -224,14 +227,17 @@ void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_pro
 }
 
 void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
-    glNamedBufferSubData(batch->instances_ssbo, 0, batch->count*sizeof(batch->instances[0]), batch->instances);
+    glNamedBufferSubData(batch->instances_ssbo, 0, batch->count*sizeof(m4), batch->instance_transforms);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch->instances_ssbo);
+
+    glNamedBufferSubData(batch->textures_ssbo, 0, batch->count*sizeof(GLuint64), batch->instance_textures);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch->textures_ssbo);
 
     glUseProgram(program);
 
     /* Instance specific data */
     GLint uniform = glGetUniformLocation(program, "transforms");
-    glUniformMatrix4fv(uniform, batch->count, GL_FALSE, (const GLfloat*)batch->instances);
+    glUniformMatrix4fv(uniform, batch->count, GL_FALSE, (const GLfloat*)batch->instance_transforms);
 
     /* Draw call */
     glBindVertexArray(batch->mesh.vao_handle);

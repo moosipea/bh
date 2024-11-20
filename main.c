@@ -96,7 +96,9 @@ static inline bool init_context(struct bh_context *context) {
 
     context->bulb_texture = textures_load(&context->textures, (void*)ASSET_bulb, sizeof(ASSET_bulb) - 1);
 
-    generate_random_sprites(context);
+    //generate_random_sprites(context);
+    context->sprites[0].texture_handle = context->bulb_texture;
+    m4_identity(context->sprites[0].transform);
 
     update_projection_matrix(context);
 
@@ -140,7 +142,6 @@ static inline void main_loop(struct bh_context *context) {
 }
 
 static inline void delete_context(struct bh_context context) {
-    textures_delete(context.textures);
     batch_delete(context.batch);
     delete_program(&context.program);
     glfwDestroyWindow(context.window);

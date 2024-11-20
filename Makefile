@@ -51,14 +51,15 @@ ifeq ($(OS),Windows_NT)
 	RM := del /F
 endif
 
-$(BINARY): res/built_assets.h $(OBJECTS) 
+$(BINARY): dependencies assets $(OBJECTS) 
 	$(CC) -o $@ $(OBJECTS) $(LIB_DIRS) $(LIBS)
-
-res/built_assets.h:
-	$(MAKE) -C res
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $<
+
+.PHONY: assets
+assets:
+	$(MAKE) -C res
 
 .PHONY: dependencies
 dependencies: $(GLFW_LIB) $(SPNG_LIB) $(GLAD_LIB)
