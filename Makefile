@@ -37,7 +37,7 @@ LIB_DIRS := -L$(GLFW_BUILD_DIR)/src \
 	    -L$(GLAD_BUILD_DIR)/src
 
 LIBS := -lglfw3 -lm -pthread \
-	-lspng_static \
+	-lspng_static -lz \
 	-lglad 
 
 ifeq ($(OS),Windows_NT)

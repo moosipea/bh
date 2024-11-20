@@ -90,7 +90,10 @@ static inline bool init_context(struct bh_context *context) {
     }
 
     context->batch = batch_init();
-    context->textures = textures_init();
+
+    struct bh_textures textures = {0};
+    context->textures = textures;
+
     context->bulb_texture = textures_load(&context->textures, (void*)ASSET_bulb, sizeof(ASSET_bulb) - 1);
 
     generate_random_sprites(context);
@@ -128,9 +131,9 @@ static inline void main_loop(struct bh_context *context) {
 
         /* Draw */
         for (size_t i = 0; i < TEST_SPRITES; i++) {
-            batch_render(&context->batch, context->sprites[i], context->program, &context->textures); 
+            batch_render(&context->batch, context->sprites[i], context->program); 
         }
-        batch_finish(&context->batch, context->program, &context->textures);
+        batch_finish(&context->batch, context->program);
 
         post_frame(context);
     }

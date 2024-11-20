@@ -35,7 +35,6 @@ struct bh_textures {
     GLuint textures_ssbo;
 };
 
-struct bh_textures textures_init(void);
 GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size);
 void textures_delete(struct bh_textures textures);
 
@@ -51,8 +50,8 @@ struct bh_sprite_batch {
 };
 
 struct bh_sprite_batch batch_init(void);
-void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program, struct bh_textures *textures);
-void batch_finish(struct bh_sprite_batch *batch, bh_program program, struct bh_textures *textures);
+void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program);
+void batch_finish(struct bh_sprite_batch *batch, bh_program program);
 void batch_delete(struct bh_sprite_batch batch);
 
 #endif // !BH_ENGINE_H

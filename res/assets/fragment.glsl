@@ -3,11 +3,11 @@
 #extension GL_ARB_bindless_texture : require
 
 in vec2 fUVs;
-in uvec2 fTextureID;
+in sampler2D fTexture;
 
 out vec4 FragColor;
   
 void main() {
-    FragColor = vec4(0.8, 0.4, 0.6, 1.0);
+    FragColor = texture(fTexture, fUVs);
 }
 

@@ -15,13 +15,13 @@ layout(binding = 2, std430) readonly buffer ssbo1 {
 };
 
 out vec2 fUVs;
-out uvec2 fTextureID;
+out sampler2D fTexture;
 
 void main() {
     vec4 pos = projection_matrix * model_matrices[gl_InstanceID].transform * vec4(aPos, 1.0);
     gl_Position = pos;
 
     fUVs = aUVs;
-    fTextureID = sprite_data[gl_InstanceID].texture_handle;
+    fTexture = sprite_data[gl_InstanceID].texture_handle;
 }
 

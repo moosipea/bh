@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
+#define SPNG_STATIC
 #include <spng.h>
 
 #include "error_macro.h"
@@ -158,15 +160,6 @@ static inline bh_texture create_texture(void *png_data, size_t size) {
     return texture;
 }
 
-struct bh_textures textures_init(void) {
-    struct bh_textures textures = {0};
-
-    glCreateBuffers(1, &textures.textures_ssbo);
-    glNamedBufferStorage(textures.textures_ssbo, sizeof(textures.texture_handles), textures.texture_handles, GL_DYNAMIC_STORAGE_BIT); 
-
-    return textures;
-}
-
 GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size) {
     if (textures->count >= BH_MAX_TEXTURES) {
         error("Couldn't load texture, textures->count exceeds BH_MAX_TEXTURES");
@@ -187,15 +180,6 @@ GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size
 
     textures->texture_ids[textures->count] = texture;
     textures->texture_handles[textures->count] = texture_handle;
-
-    const size_t texture_handle_size = sizeof(textures->texture_handles[0]);
-    glNamedBufferSubData(
-            textures->textures_ssbo,
-            textures->count*texture_handle_size,
-            texture_handle_size,
-            textures->texture_handles
-            );
-    
     textures->count++;
 
     return texture_handle;
@@ -229,21 +213,19 @@ void batch_delete(struct bh_sprite_batch batch) {
     glDeleteBuffers(1, &batch.instances_ssbo);
 }
 
-void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program, struct bh_textures *textures) {
+void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_program program) {
     /* Insert sprite data into batch array */
     batch->instances[batch->count++] = sprite;
 
     /* Draw the batch when it is full */
     if (batch->count >= BH_BATCH_SIZE) {
-        batch_finish(batch, program, textures);
+        batch_finish(batch, program);
     }
 }
 
-void batch_finish(struct bh_sprite_batch *batch, bh_program program, struct bh_textures *textures) {
+void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
     glNamedBufferSubData(batch->instances_ssbo, 0, batch->count*sizeof(batch->instances[0]), batch->instances);
-
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch->instances_ssbo);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, textures->textures_ssbo);
 
     glUseProgram(program);
 
