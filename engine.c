@@ -108,19 +108,46 @@ struct bh_mesh_handle upload_mesh(const GLfloat *vertices, size_t count) {
     return res;
 }
 
-/* TODO: check for errors and return NULL */
 static inline void *load_png(void *png_data, size_t size, size_t *width, size_t *height) {
     spng_ctx *ctx = spng_ctx_new(0);
+    if (ctx == NULL) {
+        error("Failed to initialise spng context");
+        return NULL;
+    }
+
+    int err;
     struct spng_ihdr ihdr;
 
-    spng_set_png_buffer(ctx, png_data, size);
-    spng_get_ihdr(ctx, &ihdr);
+    err = spng_set_png_buffer(ctx, png_data, size);
+    if (err) {
+        error("spng_set_png_buffer: %s", spng_strerror(err));
+        return NULL;
+    }
+
+    err = spng_get_ihdr(ctx, &ihdr);
+    if (err) {
+        error("Failed to read PNG header: %s", spng_strerror(err));
+        return NULL;
+    }
 
     size_t decoded_size;
-    spng_decoded_image_size(ctx, SPNG_FMT_RGBA8, &decoded_size);
+    err = spng_decoded_image_size(ctx, SPNG_FMT_RGBA8, &decoded_size);
+    if (err) {
+        error("Failed to read image size: %s", spng_strerror(err));
+        return NULL;
+    }
 
     void *decoded_image = malloc(decoded_size);
-    spng_decode_image(ctx, decoded_image, decoded_size, SPNG_FMT_RGBA8, 0);
+    if (decoded_image == NULL) {
+        error("Failed to allocate memory");
+        return NULL;
+    }
+
+    err = spng_decode_image(ctx, decoded_image, decoded_size, SPNG_FMT_RGBA8, 0);
+    if (err) {
+        error("Failed to decode image: %s", spng_strerror(err));
+        return NULL;
+    }
 
     *width = ihdr.width;
     *height = ihdr.height;
@@ -152,6 +179,7 @@ static inline bh_texture create_texture(void *png_data, size_t size) {
 
     if (!(image_data = load_png(png_data, size, &width, &height))) {
         error("Couldn't load image");
+        return 0;
     }
 
     bh_texture texture = upload_texture(image_data, width, height);
@@ -168,6 +196,10 @@ GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size
     }
 
     bh_texture texture = create_texture(png_data, size);
+    if (!texture) {
+        error("Couldn't create texture");
+        return 0;
+    }
 
     /* Create bindless texture handle */
     GLuint64 texture_handle = glGetTextureHandleARB(texture);
@@ -186,6 +218,22 @@ GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size
     return texture_handle;
 }
 
+void textures_delete(struct bh_textures textures) {
+    for (size_t i = 0; i < textures.count; i++) {
+        glMakeTextureHandleNonResidentARB(textures.texture_handles[i]);
+    }
+    glDeleteTextures(textures.count, (const GLuint*)&textures.texture_ids);
+}
+
+static GLuint create_ssbo(const void *buffer, size_t size) {
+    GLuint id;
+
+    glCreateBuffers(1, &id);
+    glNamedBufferStorage(id, size, buffer, GL_DYNAMIC_STORAGE_BIT);
+
+    return id;
+}
+
 struct bh_sprite_batch batch_init(void) {
     struct bh_sprite_batch res = {0};
 
@@ -199,12 +247,8 @@ struct bh_sprite_batch batch_init(void) {
     };
 
     res.mesh = upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
-
-    glCreateBuffers(1, &res.instances_ssbo);
-    glNamedBufferStorage(res.instances_ssbo, sizeof(res.instance_transforms), res.instance_transforms, GL_DYNAMIC_STORAGE_BIT);
-
-    glCreateBuffers(1, &res.textures_ssbo);
-    glNamedBufferStorage(res.textures_ssbo, sizeof(res.instance_textures), res.instance_textures, GL_DYNAMIC_STORAGE_BIT);
+    res.instances_ssbo = create_ssbo(res.instance_transforms, sizeof(res.instance_transforms));
+    res.textures_ssbo = create_ssbo(res.instance_textures, sizeof(res.instance_textures));
 
     return res;
 }
@@ -226,20 +270,8 @@ void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_pro
     }
 }
 
-void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
-    glNamedBufferSubData(batch->instances_ssbo, 0, batch->count*sizeof(m4), batch->instance_transforms);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch->instances_ssbo);
-
-    glNamedBufferSubData(batch->textures_ssbo, 0, batch->count*sizeof(GLuint64), batch->instance_textures);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch->textures_ssbo);
-
+static inline void batch_drawcall(struct bh_sprite_batch *batch, bh_program program) {
     glUseProgram(program);
-
-    /* Instance specific data */
-    GLint uniform = glGetUniformLocation(program, "transforms");
-    glUniformMatrix4fv(uniform, batch->count, GL_FALSE, (const GLfloat*)batch->instance_transforms);
-
-    /* Draw call */
     glBindVertexArray(batch->mesh.vao_handle);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -248,6 +280,20 @@ void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
 
     glDisableVertexAttribArray(1);
     glDisableVertexAttribArray(0);
+    glUseProgram(0);
+}
+
+void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
+    /* Sync SSBO contents */
+    glNamedBufferSubData(batch->instances_ssbo, 0, batch->count*sizeof(m4), batch->instance_transforms);
+    glNamedBufferSubData(batch->textures_ssbo, 0, batch->count*sizeof(GLuint64), batch->instance_textures);
+
+    /* Make sure SSBOs are bound */
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, batch->instances_ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, batch->textures_ssbo);
+
+    /* Draw call */
+    batch_drawcall(batch, program);
 
     /* Reset batch state */
     batch->count = 0;
