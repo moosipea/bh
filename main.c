@@ -10,7 +10,7 @@
 #include "engine.h"
 #include "res/built_assets.h"
 
-#define TEST_SPRITES 1024
+#define TEST_SPRITES 8192
 
 struct bh_context {
     int width;
@@ -66,7 +66,7 @@ static inline float uniform_rand(void) {
 static inline void generate_random_sprites(struct bh_context *context) {
     for (size_t i = 0; i < TEST_SPRITES; i++) {
         context->sprites[i].texture_handle = context->bulb_texture;
-        m4_scale(context->sprites[i].transform, 0.025f, 0.025f, 0.025f);
+        m4_scale(context->sprites[i].transform, 0.03f, 0.03f, 0.03f);
 
         m4 translation;
         m4_translation(translation, uniform_rand(), uniform_rand(), uniform_rand());
@@ -99,9 +99,7 @@ static inline bool init_context(struct bh_context *context) {
 
     context->bulb_texture = textures_load(&context->textures, (void*)ASSET_bulb, sizeof(ASSET_bulb) - 1);
 
-    //generate_random_sprites(context);
-    context->sprites[0].texture_handle = context->bulb_texture;
-    m4_identity(context->sprites[0].transform);
+    generate_random_sprites(context);
 
     update_projection_matrix(context);
 

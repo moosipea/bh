@@ -26,7 +26,7 @@ struct bh_sprite {
     m4 transform;
 };
 
-#define BH_MAX_TEXTURES 128
+#define BH_MAX_TEXTURES 256
 
 struct bh_textures {
     bh_texture texture_ids[BH_MAX_TEXTURES];
@@ -38,7 +38,7 @@ GLuint64 textures_load(struct bh_textures *textures, void *png_data, size_t size
 
 /* Must match the size of the uniform array in the vertex shader. */
 /* Should probably switch to a SSBO in the future. */
-#define BH_BATCH_SIZE 128
+#define BH_BATCH_SIZE 1024
 
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;
