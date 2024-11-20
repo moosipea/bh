@@ -12,6 +12,7 @@ layout(binding = 3, std430) readonly buffer ssbo2 {
 out vec4 FragColor;
   
 void main() {
-    FragColor = vec4(texture(sprite_textures[fInstance], fUVs).rgb, 1.0);
+    vec2 uvs = vec2(fUVs.x, 1.0 - fUVs.y);
+    FragColor = vec4(texture(sprite_textures[fInstance], uvs).rgb, 1.0);
 }
 
