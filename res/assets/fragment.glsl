@@ -13,6 +13,7 @@ out vec4 FragColor;
   
 void main() {
     vec2 uvs = vec2(fUVs.x, 1.0 - fUVs.y);
-    FragColor = vec4(texture(sprite_textures[fInstance], uvs).rgb, 1.0);
+    vec4 color = texture(sprite_textures[fInstance], uvs);
+    FragColor = color;
 }
 

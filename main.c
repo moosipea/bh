@@ -45,6 +45,9 @@ static inline bool init_gl(struct bh_context *context) {
         return false;
     }
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     return true;
 }
 
