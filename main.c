@@ -18,9 +18,11 @@ struct bh_context {
     GLFWwindow *window;
     bh_program program;
     m4 projection_matrix;
-    struct bh_sprite sprites[TEST_SPRITES];
+
     struct bh_sprite_batch batch;
     struct bh_textures textures;
+    struct bh_sprite_ll *entities;
+
     GLuint64 bulb_texture;
 };
 
@@ -63,14 +65,26 @@ static inline float uniform_rand(void) {
     return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f;
 }
 
-static inline void generate_random_sprites(struct bh_context *context) {
-    for (size_t i = 0; i < TEST_SPRITES; i++) {
-        context->sprites[i].texture_handle = context->bulb_texture;
-        m4_scale(context->sprites[i].transform, 0.03f, 0.03f, 0.03f);
+static void test_entity_system(struct bh_sprite_entity *entity) {
+    return;
+}
 
-        m4 translation;
-        m4_translation(translation, uniform_rand(), uniform_rand(), uniform_rand());
-        m4_multiply(context->sprites[i].transform, translation);
+static inline void spawn_test_entities(struct bh_context *context) {
+    for (size_t i = 0; i < TEST_SPRITES; i++) {
+
+        struct bh_sprite sprite = {0};
+        sprite.texture_handle = context->bulb_texture;
+        m4_scale(sprite.transform, 0.03f, 0.03f, 0.03f);
+
+        struct bh_sprite_entity entity = {
+            .sprite = sprite,
+            .x = uniform_rand(),
+            .y = uniform_rand(),
+            .z = uniform_rand(),
+            .callback = test_entity_system,
+        };
+
+        spawn_entity(&context->entities, entity);
     }
 }
 
@@ -102,7 +116,7 @@ static inline bool init_context(struct bh_context *context) {
         return false;
     }
 
-    generate_random_sprites(context);
+    spawn_test_entities(context);
 
     update_projection_matrix(context);
 
@@ -136,16 +150,14 @@ static inline void main_loop(struct bh_context *context) {
         pre_frame(context);
 
         /* Draw */
-        for (size_t i = 0; i < TEST_SPRITES; i++) {
-            batch_render(&context->batch, context->sprites[i], context->program); 
-        }
-        batch_finish(&context->batch, context->program);
+        render_all_entities(&context->batch, context->entities, context->program);
 
         post_frame(context);
     }
 }
 
 static inline void delete_context(struct bh_context context) {
+    kill_all_entities(context.entities);
     textures_delete(context.textures);
     batch_delete(context.batch);
     delete_program(&context.program);

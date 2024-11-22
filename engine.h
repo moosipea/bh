@@ -53,4 +53,23 @@ void batch_render(struct bh_sprite_batch *batch, struct bh_sprite sprite, bh_pro
 void batch_finish(struct bh_sprite_batch *batch, bh_program program);
 void batch_delete(struct bh_sprite_batch batch);
 
+struct bh_sprite_entity;
+typedef void (*bh_sprite_entity_cb)(struct bh_sprite_entity *entity);
+
+struct bh_sprite_entity {
+    struct bh_sprite sprite;
+    float x, y, z;
+    bh_sprite_entity_cb callback; 
+};
+
+struct bh_sprite_ll {
+    struct bh_sprite_entity entity;
+    struct bh_sprite_ll *next;
+};
+
+struct bh_sprite_ll *spawn_entity(struct bh_sprite_ll **ll, struct bh_sprite_entity entity);
+void kill_entity(struct bh_sprite_ll **ll, struct bh_sprite_ll *to_be_deleted);
+void kill_all_entities(struct bh_sprite_ll *ll);
+void render_all_entities(struct bh_sprite_batch *batch, struct bh_sprite_ll *entities, bh_program program);
+
 #endif // !BH_ENGINE_H

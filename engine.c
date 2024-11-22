@@ -298,3 +298,93 @@ void batch_finish(struct bh_sprite_batch *batch, bh_program program) {
     /* Reset batch state */
     batch->count = 0;
 }
+
+static struct bh_sprite_ll *init_sprite_ll_with(struct bh_sprite_entity entity) {
+    struct bh_sprite_ll ll = {
+        .entity = entity,
+        .next = NULL,
+    };
+
+    struct bh_sprite_ll *allocated = calloc(1, sizeof(struct bh_sprite_ll));
+    memcpy(allocated, &ll, sizeof(struct bh_sprite_ll));
+
+    return allocated;
+}
+
+struct bh_sprite_ll *spawn_entity(struct bh_sprite_ll **ll, struct bh_sprite_entity entity) {
+    if (ll == NULL) {
+        error("Received NULL instead of pointer to `struct bh_sprite_ll`");
+        return NULL;
+    }
+
+    if (*ll == NULL) {
+        *ll = init_sprite_ll_with(entity);
+        return *ll;
+    } else {
+        struct bh_sprite_ll *node = *ll;
+        while (node->next != NULL) {
+            node = node->next;
+        }
+        
+        node->next = init_sprite_ll_with(entity);
+        return node->next;
+    }
+}
+
+void kill_entity(struct bh_sprite_ll **ll, struct bh_sprite_ll *to_be_deleted) {
+    if (!ll || !*ll) {
+        return;
+    }
+
+    if (*ll == to_be_deleted) {
+        *ll = to_be_deleted->next;
+        free(to_be_deleted);
+    } else {
+        struct bh_sprite_ll *node = *ll;
+        while (node->next != NULL) {
+            if (node->next == to_be_deleted) {
+                node->next = node->next->next;
+                free(to_be_deleted);
+                break;
+            }
+            node = node->next;
+        }
+    }
+}
+
+void kill_all_entities(struct bh_sprite_ll *ll) {
+    if (!ll) {
+        return;
+    }
+
+    struct bh_sprite_ll *node = ll; 
+
+    while (node != NULL) {
+        struct bh_sprite_ll *free_me = node;
+        node = node->next;
+        free(free_me);
+    }
+}
+
+static inline void update_entity_transform(struct bh_sprite_entity *entity) {
+    m4 model_matrix;
+    m4 translation;
+
+    m4_scale(model_matrix, 0.04f, 0.04f, 0.04f);
+    m4_translation(translation, entity->x, entity->y, entity->z);
+    m4_multiply(model_matrix, translation);
+
+    memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
+}
+
+void render_all_entities(struct bh_sprite_batch *batch, struct bh_sprite_ll *entities, bh_program program) {
+    struct bh_sprite_ll *node = entities;
+
+    while (node != NULL) {
+        update_entity_transform(&node->entity);
+        batch_render(batch, node->entity.sprite, program);
+        node = node->next;    
+    }
+
+    batch_finish(batch, program);
+}
