@@ -66,7 +66,10 @@ static inline float uniform_rand(void) {
 }
 
 static void test_entity_system(struct bh_sprite_entity *entity) {
-    return;
+    entity->y -= 1.0f / 60.0f;
+    if (entity->y <= -1.0f) {
+        entity->y = 1.0f;
+    }
 }
 
 static inline void spawn_test_entities(struct bh_context *context) {

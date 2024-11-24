@@ -381,6 +381,8 @@ void render_all_entities(struct bh_sprite_batch *batch, struct bh_sprite_ll *ent
     struct bh_sprite_ll *node = entities;
 
     while (node != NULL) {
+        /* TODO: separate tick system for updating entity state */
+        (node->entity.callback)(&node->entity);
         update_entity_transform(&node->entity);
         batch_render(batch, node->entity.sprite, program);
         node = node->next;    
