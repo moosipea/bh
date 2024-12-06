@@ -164,8 +164,8 @@ static inline bh_texture upload_texture(void *image, size_t width, size_t height
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
@@ -370,20 +370,27 @@ static inline void update_entity_transform(struct bh_sprite_entity *entity) {
     m4 model_matrix;
     m4 translation;
 
-    m4_scale(model_matrix, 0.04f, 0.04f, 0.04f);
+    m4_scale(model_matrix, entity->scale_x, entity->scale_y, entity->scale_z);
     m4_translation(translation, entity->x, entity->y, entity->z);
     m4_multiply(model_matrix, translation);
 
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
 }
 
+void tick_all_entities(void *state, struct bh_sprite_ll *entities) {
+    struct bh_sprite_ll *node = entities;
+
+    while (node != NULL) {
+        (node->entity.callback)(state, &node->entity);
+        update_entity_transform(&node->entity);
+        node = node->next;
+    }
+}
+
 void render_all_entities(struct bh_sprite_batch *batch, struct bh_sprite_ll *entities, bh_program program) {
     struct bh_sprite_ll *node = entities;
 
     while (node != NULL) {
-        /* TODO: separate tick system for updating entity state */
-        (node->entity.callback)(&node->entity);
-        update_entity_transform(&node->entity);
         batch_render(batch, node->entity.sprite, program);
         node = node->next;    
     }
