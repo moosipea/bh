@@ -146,8 +146,9 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
     }
 }
 
-static void update_player_system(void* context, struct bh_sprite_entity* entity) {
-    struct bh_ctx *ctx = context;
+static void
+update_player_system(void* context, struct bh_sprite_entity* entity) {
+    struct bh_ctx* ctx = context;
 
     if (get_key(ctx, GLFW_KEY_A)) {
         entity->x -= 1.0f * ctx->dt;
