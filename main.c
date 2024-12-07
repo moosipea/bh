@@ -26,9 +26,15 @@ struct bh_context {
     struct bh_sprite_ll *player_entity;
 
     GLuint64 bulb_texture;
-};
 
-static inline bool init_gl(struct bh_context *context) {
+    int keys_held[GLFW_KEY_LAST];
+} g_context;
+
+static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    
+}
+
+static inline bool init_glfw(struct bh_context *context) {
     if (!glfwInit()) {
         error("GLFW initialization failed");
         return false;
@@ -40,9 +46,19 @@ static inline bool init_gl(struct bh_context *context) {
         return false;
     }
 
+
+
     glfwMakeContextCurrent(context->window);
     glfwSwapInterval(1);
-    
+       
+    return true;
+}
+
+static inline bool init_gl(struct bh_context *context) {
+    if (!init_glfw(context)) {
+        return false;
+    }
+
     int glad_version = gladLoadGL(glfwGetProcAddress);
     if (!glad_version) {
         error("Failed to initialize OpenGL context");
