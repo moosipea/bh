@@ -12,7 +12,7 @@
 
 #define TEST_SPRITES 64
 
-struct bh_context {
+static struct bh_ctx {
     int width;
     int height;
     GLFWwindow *window;
@@ -28,40 +28,40 @@ struct bh_context {
     GLuint64 bulb_texture;
 
     int keys_held[GLFW_KEY_LAST];
-} g_context;
+} g_ctx = {0};
 
 static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
     
 }
 
-static inline bool init_glfw(struct bh_context *context) {
+static inline bool init_glfw(struct bh_ctx *ctx) {
     if (!glfwInit()) {
         error("GLFW initialization failed");
         return false;
     }
 
-    context->window = glfwCreateWindow(context->width, context->height, "Hello, world!", NULL, NULL);
-    if (!context->window) {
+    ctx->window = glfwCreateWindow(ctx->width, ctx->height, "Hello, world!", NULL, NULL);
+    if (!ctx->window) {
         error("Window creation failed");
         return false;
     }
 
 
 
-    glfwMakeContextCurrent(context->window);
+    glfwMakeContextCurrent(ctx->window);
     glfwSwapInterval(1);
        
     return true;
 }
 
-static inline bool init_gl(struct bh_context *context) {
-    if (!init_glfw(context)) {
+static inline bool init_gl(struct bh_ctx *ctx) {
+    if (!init_glfw(ctx)) {
         return false;
     }
 
     int glad_version = gladLoadGL(glfwGetProcAddress);
     if (!glad_version) {
-        error("Failed to initialize OpenGL context");
+        error("Failed to initialize OpenGL ctx");
         return false;
     }
 
@@ -71,9 +71,9 @@ static inline bool init_gl(struct bh_context *context) {
     return true;
 }
 
-static inline bool init_shaders(struct bh_context *context) {
-    if ((context->program = create_program((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment))) {
-        glUseProgram(context->program);
+static inline bool init_shaders(struct bh_ctx *ctx) {
+    if ((ctx->program = create_program((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment))) {
+        glUseProgram(ctx->program);
         return true;
     }
     return false;
@@ -83,19 +83,19 @@ static inline float uniform_rand(void) {
     return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f;
 }
 
-static void test_entity_system(void *context, struct bh_sprite_entity *entity) {
-    (void) context;
+static void test_entity_system(void *ctx, struct bh_sprite_entity *entity) {
+    (void) ctx;
     entity->y -= 1.0f / 60.0f;
     if (entity->y <= -1.0f) {
         entity->y = 1.0f;
     }
 }
 
-static inline void spawn_test_entities(struct bh_context *context) {
+static inline void spawn_test_entities(struct bh_ctx *ctx) {
     for (size_t i = 0; i < TEST_SPRITES; i++) {
 
         struct bh_sprite sprite = {0};
-        sprite.texture_handle = context->bulb_texture;
+        sprite.texture_handle = ctx->bulb_texture;
         m4_identity(sprite.transform);
 
         struct bh_sprite_entity entity = {
@@ -109,18 +109,18 @@ static inline void spawn_test_entities(struct bh_context *context) {
             .callback = test_entity_system,
         };
 
-        spawn_entity(&context->entities, entity);
+        spawn_entity(&ctx->entities, entity);
     }
 }
 
-static void update_player_system(void *context, struct bh_sprite_entity *entity) {
-    (void) context;
+static void update_player_system(void *ctx, struct bh_sprite_entity *entity) {
+    (void) ctx;
     (void) entity;
 }
 
-static inline void spawn_player_entity(struct bh_context *context) {
+static inline void spawn_player_entity(struct bh_ctx *ctx) {
     struct bh_sprite sprite = {0};
-    sprite.texture_handle = textures_load(&context->textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
+    sprite.texture_handle = textures_load(&ctx->textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
 
     struct bh_sprite_entity entity = {
         .sprite = sprite,
@@ -133,103 +133,101 @@ static inline void spawn_player_entity(struct bh_context *context) {
         .callback = update_player_system,
     };
 
-    spawn_entity(&context->entities, entity);
+    spawn_entity(&ctx->entities, entity);
 }
 
-static void update_projection_matrix(struct bh_context *context) {
-    m4_scale(context->projection_matrix, 1.0f, 1.0f, 1.0f);
+static void update_projection_matrix(struct bh_ctx *ctx) {
+    m4_scale(ctx->projection_matrix, 1.0f, 1.0f, 1.0f);
 
     m4 projection;
-    m4_ortho(projection, 1.0f, context->width, 1.0f, context->height, 0.001f, 1000.0f);
-    m4_multiply(context->projection_matrix, projection);
+    m4_ortho(projection, 1.0f, ctx->width, 1.0f, ctx->height, 0.001f, 1000.0f);
+    m4_multiply(ctx->projection_matrix, projection);
 
-    GLint projection_matrix_uniform = glGetUniformLocation(context->program, "projection_matrix");
-    glUniformMatrix4fv(projection_matrix_uniform, 1, GL_FALSE, (const GLfloat*) context->projection_matrix);
+    GLint projection_matrix_uniform = glGetUniformLocation(ctx->program, "projection_matrix");
+    glUniformMatrix4fv(projection_matrix_uniform, 1, GL_FALSE, (const GLfloat*) ctx->projection_matrix);
 }
 
-static inline bool init_context(struct bh_context *context) {
-    context->width = 640;
-    context->height = 480;
+static inline bool init_ctx(struct bh_ctx *ctx) {
+    ctx->width = 640;
+    ctx->height = 480;
 
-    if (!init_gl(context)) {
+    if (!init_gl(ctx)) {
         return false;
     }
 
-    if (!init_shaders(context)) {
+    if (!init_shaders(ctx)) {
         return false;
     }
 
-    context->batch = batch_init();
+    ctx->batch = batch_init();
 
     struct bh_textures textures = {0};
-    context->textures = textures;
+    ctx->textures = textures;
 
-    context->bulb_texture = textures_load(&context->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
-    if (!context->bulb_texture) {
+    ctx->bulb_texture = textures_load(&ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
+    if (!ctx->bulb_texture) {
         return false;
     }
 
-    spawn_test_entities(context);
-    spawn_player_entity(context);
+    spawn_test_entities(ctx);
+    spawn_player_entity(ctx);
 
-    update_projection_matrix(context);
+    update_projection_matrix(ctx);
 
     return true;
 }
 
-static inline void pre_frame(struct bh_context *context) {
+static inline void pre_frame(struct bh_ctx *ctx) {
     glfwPollEvents();
     
     int width, height;
-    glfwGetFramebufferSize(context->window, &width, &height);
+    glfwGetFramebufferSize(ctx->window, &width, &height);
 
-    if (width != context->width || height != context->height) {
-        context->width = width;
-        context->height = height;
-        glViewport(0, 0, context->width, context->height);
-        update_projection_matrix(context);
+    if (width != ctx->width || height != ctx->height) {
+        ctx->width = width;
+        ctx->height = height;
+        glViewport(0, 0, ctx->width, ctx->height);
+        update_projection_matrix(ctx);
     }
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static inline void post_frame(struct bh_context *context) {
-    glfwSwapBuffers(context->window);
+static inline void post_frame(struct bh_ctx *ctx) {
+    glfwSwapBuffers(ctx->window);
 }
 
-static inline void main_loop(struct bh_context *context) {
-    while (!glfwWindowShouldClose(context->window)) {
-        pre_frame(context);
+static inline void main_loop(struct bh_ctx *ctx) {
+    while (!glfwWindowShouldClose(ctx->window)) {
+        pre_frame(ctx);
 
         /* Tick */
-        tick_all_entities(context, context->entities);
+        tick_all_entities(ctx, ctx->entities);
 
         /* Draw */
-        render_all_entities(&context->batch, context->entities, context->program);
+        render_all_entities(&ctx->batch, ctx->entities, ctx->program);
 
-        post_frame(context);
+        post_frame(ctx);
     }
 }
 
-static inline void delete_context(struct bh_context context) {
-    kill_all_entities(context.entities);
-    textures_delete(context.textures);
-    batch_delete(context.batch);
-    delete_program(&context.program);
-    glfwDestroyWindow(context.window);
+static inline void delete_ctx(struct bh_ctx ctx) {
+    kill_all_entities(ctx.entities);
+    textures_delete(ctx.textures);
+    batch_delete(ctx.batch);
+    delete_program(&ctx.program);
+    glfwDestroyWindow(ctx.window);
     glfwTerminate();
 }
 
 int main(void) {
-    struct bh_context context = {0};
-
-    if (!init_context(&context)) {
+    if (!init_ctx(&g_ctx)) {
         error("Context initialisation failed");
         exit(1);
     }
 
-    main_loop(&context);
-    delete_context(context);
+    main_loop(&g_ctx);
+    delete_ctx(g_ctx);
     return 0;
 }
