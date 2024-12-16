@@ -62,8 +62,8 @@ typedef void (*bh_sprite_entity_cb)(
 
 struct bh_sprite_entity {
     struct bh_sprite sprite;
-    float x, y, z;
-    float scale_x, scale_y, scale_z;
+    struct vec2 position;
+    struct vec2 scale;
     bh_sprite_entity_cb callback;
 };
 

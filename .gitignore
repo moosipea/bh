@@ -4,8 +4,10 @@
 main
 compile_commands.json
 .ccls-cache/
+.cache/
 
 res/*.h
 res/*.o
 res/*.exe
 res/asset_builder
+res/.cache/

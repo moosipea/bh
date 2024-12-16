@@ -118,9 +118,9 @@ static inline float uniform_rand(void) {
 
 static void test_entity_system(void* ctx, struct bh_sprite_entity* entity) {
     (void)ctx;
-    entity->y -= 1.0f / 60.0f;
-    if (entity->y <= -1.0f) {
-        entity->y = 1.0f;
+    entity->position.y -= 1.0f / 60.0f;
+    if (entity->position.y <= -1.0f) {
+        entity->position.y = 1.0f;
     }
 }
 
@@ -133,12 +133,8 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
 
         struct bh_sprite_entity entity = {
             .sprite   = sprite,
-            .x        = uniform_rand(),
-            .y        = uniform_rand(),
-            .z        = uniform_rand(),
-            .scale_x  = 0.05f,
-            .scale_y  = 0.05f,
-            .scale_z  = 0.05f,
+            .position = {uniform_rand(), uniform_rand()},
+            .scale    = {         0.05f,          0.05f},
             .callback = test_entity_system,
         };
 
@@ -151,10 +147,10 @@ update_player_system(void* context, struct bh_sprite_entity* entity) {
     struct bh_ctx* ctx = context;
 
     if (get_key(ctx, GLFW_KEY_A)) {
-        entity->x -= 1.0f * ctx->dt;
+        entity->position.x -= 1.0f * ctx->dt;
     }
     if (get_key(ctx, GLFW_KEY_D)) {
-        entity->x += 1.0f * ctx->dt;
+        entity->position.x += 1.0f * ctx->dt;
     }
 }
 
@@ -166,12 +162,8 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
 
     struct bh_sprite_entity entity = {
         .sprite   = sprite,
-        .x        = 0.0f,
-        .y        = 0.0f,
-        .z        = 0.0f,
-        .scale_x  = 0.15f,
-        .scale_y  = 0.15f,
-        .scale_z  = 0.15f,
+        .position = { 0.0f,  0.0f},
+        .scale    = {0.15f, 0.15f},
         .callback = update_player_system,
     };
 

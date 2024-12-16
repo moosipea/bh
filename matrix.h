@@ -16,4 +16,8 @@ void m4_ortho(
 
 void m4_multiply(m4 dest, m4 mat);
 
+struct vec2 {
+    float x, y;
+};
+
 #endif // !BH_MATRIX_H

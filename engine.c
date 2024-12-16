@@ -395,8 +395,8 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
     m4 model_matrix;
     m4 translation;
 
-    m4_scale(model_matrix, entity->scale_x, entity->scale_y, entity->scale_z);
-    m4_translation(translation, entity->x, entity->y, entity->z);
+    m4_scale(model_matrix, entity->scale.x, entity->scale.y, 1.0f);
+    m4_translation(translation, entity->position.x, entity->position.y, 0.0f);
     m4_multiply(model_matrix, translation);
 
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
