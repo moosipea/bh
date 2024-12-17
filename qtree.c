@@ -1,13 +1,20 @@
 #include "qtree.h"
 #include "matrix.h"
 #include <stdlib.h>
+#include <string.h>
+#include <vcruntime.h>
 
 bool point_in_box(struct bounding_box box, struct vec2 point) {
     return point.x >= box.top_left.x && point.x < box.bottom_right.x &&
            point.y >= box.top_left.y && point.y < box.bottom_right.y;
 }
 
-bool boxes_intersect(struct bounding_box box, struct bounding_box other);
+bool boxes_intersect(struct bounding_box box, struct bounding_box other) {
+    return box.top_left.x < other.bottom_right.x &&
+           box.bottom_right.x > other.top_left.x &&
+           box.top_left.y < other.bottom_right.y &&
+           box.bottom_right.y > other.top_left.y;
+}
 
 static inline struct bh_qtree*
 create_subdivision(struct vec2 top_left, struct vec2 bottom_right) {
@@ -43,7 +50,7 @@ static inline void qtree_subdivide(struct bh_qtree* qtree) {
     );
 }
 
-static inline bool is_leaf(struct bh_qtree *qtree) {
+static inline bool is_leaf(struct bh_qtree* qtree) {
     return qtree->top_left == NULL;
 }
 
@@ -76,6 +83,45 @@ bool qtree_insert(struct bh_qtree* qtree, struct qtree_entity entity) {
 
     // Should be unreachable
     return false;
+}
+
+static size_t qtree_query_recursively(
+    struct bh_qtree* qtree, struct bounding_box box, struct qtree_entity* dest,
+    size_t count, size_t* start
+) {
+    if (!boxes_intersect(box, qtree->bb)) {
+        return false;
+    }
+
+    if (is_leaf(qtree)) {
+        const size_t entities_to_be_copied = min(count, qtree->element_count);
+        memcpy(
+            dest, qtree->elements,
+            entities_to_be_copied * sizeof(struct qtree_entity)
+        );
+        *start += entities_to_be_copied;
+        return entities_to_be_copied;
+    }
+
+    size_t child_entities_found = 0;
+    child_entities_found +=
+        qtree_query_recursively(qtree->top_left, box, dest, count, start);
+    child_entities_found +=
+        qtree_query_recursively(qtree->top_right, box, dest, count, start);
+    child_entities_found +=
+        qtree_query_recursively(qtree->bottom_left, box, dest, count, start);
+    child_entities_found +=
+        qtree_query_recursively(qtree->bottom_right, box, dest, count, start);
+
+    return child_entities_found;
+}
+
+size_t qtree_query(
+    struct bh_qtree* qtree, struct bounding_box box, struct qtree_entity* dest,
+    size_t count
+) {
+    size_t start = 0;
+    return qtree_query_recursively(qtree, box, dest, count, &start);
 }
 
 void qtree_free(struct bh_qtree* qtree) {

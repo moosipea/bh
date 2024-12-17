@@ -22,16 +22,20 @@ struct qtree_entity {
 struct bh_qtree {
     struct qtree_entity elements[QT_MAX_ELEMENTS];
     size_t element_count;
-        
+
     struct bounding_box bb;
 
-    struct bh_qtree *top_left;
-    struct bh_qtree *top_right;
-    struct bh_qtree *bottom_left;
-    struct bh_qtree *bottom_right;
+    struct bh_qtree* top_left;
+    struct bh_qtree* top_right;
+    struct bh_qtree* bottom_left;
+    struct bh_qtree* bottom_right;
 };
 
 bool qtree_insert(struct bh_qtree* qtree, struct qtree_entity point);
+size_t qtree_query(
+    struct bh_qtree* qtree, struct bounding_box box, struct qtree_entity* dest,
+    size_t count
+);
 void qtree_free(struct bh_qtree* qtree);
 
 #endif
