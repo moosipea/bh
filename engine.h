@@ -35,8 +35,7 @@ struct bh_textures {
     size_t count;
 };
 
-GLuint64
-textures_load(struct bh_textures* textures, void* png_data, size_t size);
+GLuint64 textures_load(struct bh_textures* textures, void* png_data, size_t size);
 void textures_delete(struct bh_textures textures);
 
 struct bh_sprite_batch {
@@ -48,6 +47,16 @@ struct bh_sprite_batch {
     GLuint textures_ssbo;
 };
 
+struct bh_entity_ll {
+    struct bh_sprite_entity entity;
+    struct bh_entity_ll* next;
+};
+
+struct bh_de_ll {
+    struct bh_entity_ll* entities;
+    struct bh_entity_ll* last;
+};
+
 struct bh_ctx {
     int width, height;
     GLFWwindow* window;
@@ -57,7 +66,9 @@ struct bh_ctx {
 
     struct bh_sprite_batch batch;
     struct bh_textures textures;
-    struct bh_qtree entities;
+
+    struct bh_de_ll entities;
+    struct bh_qtree entity_qtree;
 
     GLuint64 bulb_texture;
 
@@ -65,14 +76,14 @@ struct bh_ctx {
 };
 
 struct bh_sprite_batch batch_init(void);
-void batch_render(
-    struct bh_sprite_batch* batch, struct bh_sprite sprite, bh_program program
-);
+void batch_render(struct bh_sprite_batch* batch, struct bh_sprite sprite, bh_program program);
 void batch_finish(struct bh_sprite_batch* batch, bh_program program);
 void batch_delete(struct bh_sprite_batch batch);
 
-void spawn_entity(struct bh_qtree* qtree, struct bh_sprite_entity entity);
+void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity);
+void entities_free(struct bh_entity_ll* entities);
+
 void tick_all_entities(
-    struct bh_ctx* state, struct bh_qtree* entities,
-    struct bh_sprite_batch* batch, bh_program program
+    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree, struct bh_sprite_batch* batch,
+    bh_program program
 );

@@ -18,7 +18,7 @@ bool do_boxes_intersect(
 
 struct bh_qtree_entity {
     struct vec2 point;
-    struct bh_sprite_entity entity;
+    struct bh_sprite_entity* entity;
 };
 
 struct bh_qtree {

@@ -146,19 +146,19 @@ qtree_query(struct bh_qtree* qtree, struct bh_bounding_box box) {
 
 void qtree_free(struct bh_qtree* qtree) {
     if (qtree->top_left) {
-        qtree_free(qtree->top_left->top_left);
+        qtree_free(qtree->top_left);
         free(qtree->top_left);
     }
     if (qtree->top_right) {
-        qtree_free(qtree->top_right->top_right);
+        qtree_free(qtree->top_right);
         free(qtree->top_right);
     }
     if (qtree->bottom_left) {
-        qtree_free(qtree->bottom_left->bottom_left);
+        qtree_free(qtree->bottom_left);
         free(qtree->bottom_left);
     }
     if (qtree->bottom_right) {
-        qtree_free(qtree->bottom_right->bottom_right);
+        qtree_free(qtree->bottom_right);
         free(qtree->bottom_right);
     }
 }
