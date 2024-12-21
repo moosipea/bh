@@ -29,6 +29,7 @@ struct bh_qtree {
 bool qtree_insert(struct bh_qtree* qtree, struct bh_qtree_entity point);
 struct bh_qtree_query qtree_query(struct bh_qtree* qtree, struct bh_bounding_box box);
 void qtree_free(struct bh_qtree* qtree);
+bool qtree_is_leaf(struct bh_qtree* qtree);
 
 struct bh_qtree_query {
     struct bh_qtree_entity** entities;
@@ -37,3 +38,7 @@ struct bh_qtree_query {
 };
 
 void query_free(struct bh_qtree_query query);
+
+struct vec2 box_centre(struct bh_bounding_box bb);
+struct vec2 box_dimensions(struct bh_bounding_box bb);
+struct bh_bounding_box bb_make_global(struct vec2 centre, struct bh_bounding_box dimensions);

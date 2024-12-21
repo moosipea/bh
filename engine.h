@@ -71,7 +71,8 @@ struct bh_ctx {
     struct bh_qtree entity_qtree;
 
     GLuint64 star_texture;
-    GLuint debug_texture;
+    GLuint64 debug_texture;
+    GLuint64 green_debug_texture;
 
     bool keys_held[GLFW_KEY_LAST + 1];
 };
@@ -88,3 +89,5 @@ void tick_all_entities(
     struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
     struct bh_sprite_batch* batch, bh_program program
 );
+
+bool entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other);

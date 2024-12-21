@@ -13,6 +13,8 @@
 
 #include "error_macro.h"
 
+#define RENDER_DEBUG_INFO
+
 static bool compile_shader(bh_shader shader, const GLchar* src) {
     glShaderSource(shader, 1, &src, NULL);
     glCompileShader(shader);
@@ -340,25 +342,18 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
 }
 
-static inline struct vec2 box_centre(struct bh_bounding_box bb) {
-    return (struct vec2){ (bb.top_left.x + bb.bottom_right.x) / 2.0f,
-                          (bb.top_left.y + bb.bottom_right.y) / 2.0f };
-}
-
-static inline struct vec2 box_dimensions(struct bh_bounding_box bb) {
-    return (struct vec2){ bb.bottom_right.x - bb.top_left.x, bb.bottom_right.y - bb.top_left.y };
-}
-
-static inline void render_hitbox(
-    struct bh_sprite_entity* entity, GLuint64 texture, struct bh_sprite_batch* batch,
+#ifdef RENDER_DEBUG_INFO
+static void render_bounding_box(
+    struct bh_sprite_batch* batch, struct bh_bounding_box bb, struct vec2 offset, GLuint64 texture,
     bh_program program
 ) {
     struct bh_sprite hitbox_sprite = {
         .texture_handle = texture,
     };
 
-    struct vec2 hitbox_centre = box_centre(entity->bb);
-    struct vec2 hitbox_dimensions = box_dimensions(entity->bb);
+    struct bh_bounding_box globalised_bb = bb_make_global(offset, bb);
+    struct vec2 hitbox_centre = box_centre(globalised_bb);
+    struct vec2 hitbox_dimensions = box_dimensions(globalised_bb);
 
     m4_scale(hitbox_sprite.transform, hitbox_dimensions.x, hitbox_dimensions.y, 1.0f);
 
@@ -366,9 +361,28 @@ static inline void render_hitbox(
     m4_translation(translation, hitbox_centre.x, hitbox_centre.y, 0.0f);
     m4_multiply(hitbox_sprite.transform, translation);
 
-    memcpy(hitbox_sprite.transform, entity->sprite.transform, sizeof(m4));
     batch_render(batch, hitbox_sprite, program);
 }
+#endif
+
+#ifdef RENDER_DEBUG_INFO
+static void render_qtree(
+    struct bh_qtree* qtree, GLuint64 texture, struct bh_sprite_batch* batch, bh_program program
+) {
+    if (qtree == NULL) {
+        return;
+    }
+
+    if (qtree_is_leaf(qtree)) {
+        render_bounding_box(batch, qtree->bb, (struct vec2){ 0.0f, 0.0f }, texture, program);
+    } else {
+        render_qtree(qtree->top_left, texture, batch, program);
+        render_qtree(qtree->top_right, texture, batch, program);
+        render_qtree(qtree->bottom_left, texture, batch, program);
+        render_qtree(qtree->bottom_right, texture, batch, program);
+    }
+}
+#endif
 
 void tick_all_entities(
     struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
@@ -388,16 +402,27 @@ void tick_all_entities(
         entity->callback(state, entity);
         update_entity_transform(entity);
         batch_render(batch, entity->sprite, program);
-#if 1
-        render_hitbox(entity, state->debug_texture, batch, program);
+#ifdef RENDER_DEBUG_INFO
+        render_bounding_box(batch, entity->bb, entity->position, state->debug_texture, program);
 #endif
 
         node = node->next;
     }
+
+#ifdef RENDER_DEBUG_INFO
+    // PROBLEM: qtree is empty
+    render_qtree(qtree, state->green_debug_texture, batch, program);
+#endif
 
     batch_finish(batch, program);
 
     /* Update qtree */
     qtree_free(qtree);
     *qtree = next_qtree;
+}
+
+bool entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
+    return do_boxes_intersect(
+        bb_make_global(entity->position, entity->bb), bb_make_global(other->position, other->bb)
+    );
 }

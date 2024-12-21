@@ -17,6 +17,11 @@ struct bh_bounding_box {
     struct vec2 bottom_right;
 };
 
+enum bh_entity_type {
+    BH_BULLET = 0,
+    BH_PLAYER,
+};
+
 struct bh_sprite_entity {
     struct bh_sprite sprite;
     struct vec2 position;
@@ -24,6 +29,7 @@ struct bh_sprite_entity {
     float rotation;
     struct bh_bounding_box bb;
 
+    enum bh_entity_type type;
     bh_sprite_entity_cb callback;
     void* state;
 };

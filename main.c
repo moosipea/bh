@@ -10,7 +10,7 @@
 #include "qtree.h"
 #include "res/built_assets.h"
 
-#define TEST_SPRITES 4
+#define TEST_SPRITES 256
 
 /* Game state */
 static struct bh_ctx g_ctx = { 0 };
@@ -120,29 +120,14 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
             .position = {     uniform_rand(),   uniform_rand() },
             .scale = {              0.05f,            0.05f },
             .bb = {
-                { -0.05f, -0.05f },
-                { 0.05f, 0.05f },
+                { -0.05f, 0.05f },
+                { 0.05f, -0.05f },
             },
             .callback = test_entity_system,
         };
 
         spawn_entity(&ctx->entities, entity);
     }
-}
-
-static inline struct bh_bounding_box
-local_bb(struct vec2 centre, struct bh_bounding_box dimensions) {
-    return (struct bh_bounding_box){
-        .top_left = vec2_add(dimensions.top_left, centre),
-        .bottom_right = vec2_add(dimensions.bottom_right, centre),
-    };
-}
-
-static inline bool
-entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
-    return do_boxes_intersect(
-        local_bb(entity->position, entity->bb), local_bb(other->position, other->bb)
-    );
 }
 
 static inline struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
@@ -164,8 +149,13 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
 
     struct player_state* state = player->state;
     for (size_t i = 0; i < collision_query.count; i++) {
-        if (entities_collide(player, collision_query.entities[i]->entity) &&
-            state->immunity <= 0.01f) {
+        struct bh_sprite_entity* entity = collision_query.entities[i]->entity;
+
+        if (entity->type == BH_PLAYER) {
+            continue;
+        }
+
+        if (entities_collide(player, entity) && state->immunity <= 0.01f) {
             printf("Collision!\n");
             state->immunity = 0.5f;
             break;
@@ -198,9 +188,10 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
         .position = {               0.0f,             0.0f },
         .scale = {              0.15f,            0.15f },
         .bb = {
-            { -0.15f, -0.15f },
-            { 0.15f, 0.15f },
+            { -0.075f, 0.075f },
+            { 0.075f, -0.075f },
         },
+        .type = BH_PLAYER,
         .callback = update_player_system,
     };
 
@@ -239,8 +230,8 @@ static inline bool init_ctx(struct bh_ctx* ctx) {
 
     ctx->batch = batch_init();
     ctx->entity_qtree.bb = (struct bh_bounding_box){
-        .top_left = { -1.0f, -1.0f },
-        .bottom_right = {  1.0f,  1.0f },
+        .top_left = { -1.0f,  1.0f },
+        .bottom_right = {  1.0f, -1.0f },
     };
 
     ctx->star_texture = textures_load(&ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
@@ -250,6 +241,12 @@ static inline bool init_ctx(struct bh_ctx* ctx) {
 
     ctx->debug_texture = textures_load(&ctx->textures, (void*)ASSET_debug, sizeof(ASSET_debug) - 1);
     if (!ctx->debug_texture) {
+        return false;
+    }
+
+    ctx->green_debug_texture =
+        textures_load(&ctx->textures, (void*)ASSET_green_debug, sizeof(ASSET_green_debug) - 1);
+    if (!ctx->green_debug_texture) {
         return false;
     }
 
