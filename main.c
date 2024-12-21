@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "engine.h"
+#include "entitydef.h"
 #include "error_macro.h"
 #include "qtree.h"
 #include "res/built_assets.h"
@@ -115,8 +116,12 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
 
         struct bh_sprite_entity entity = {
             .sprite = sprite,
-            .position = { uniform_rand(), uniform_rand() },
-            .scale = {          0.05f,          0.05f },
+            .position = {     uniform_rand(),   uniform_rand() },
+            .scale = {              0.05f,            0.05f },
+            .bb = {
+                { -0.05f, -0.05f },
+                { 0.05f, 0.05f },
+            },
             .callback = test_entity_system,
         };
 
@@ -124,14 +129,47 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
     }
 }
 
-static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
-    // struct bh_qtree_query collision_query = qtree_query(ctx->entities, extended_bb);
+static inline struct bh_bounding_box
+local_bb(struct vec2 centre, struct bh_bounding_box dimensions) {
+    return (struct bh_bounding_box){
+        .top_left = vec2_add(dimensions.top_left, centre),
+        .bottom_right = vec2_add(dimensions.bottom_right, centre),
+    };
+}
+
+static inline bool
+entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
+    return do_boxes_intersect(
+        local_bb(entity->position, entity->bb), local_bb(other->position, other->bb)
+    );
+}
+
+static inline struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
+    return (struct bh_bounding_box){
+        .top_left = vec2_subf(bb.top_left, by),
+        .bottom_right = vec2_addf(bb.bottom_right, by),
+    };
+}
+
+// TODO: entity state, iframes
+static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* player) {
+    struct bh_qtree_query collision_query =
+        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, player->scale.x));
+
+    for (size_t i = 0; i < collision_query.count; i++) {
+        if (entities_collide(player, collision_query.entities[i]->entity)) {
+            printf("Collision!\n");
+            break;
+        }
+    }
+
+    query_free(collision_query);
 
     if (get_key(ctx, GLFW_KEY_A)) {
-        entity->position.x -= 1.0f * ctx->dt;
+        player->position.x -= 1.0f * ctx->dt;
     }
     if (get_key(ctx, GLFW_KEY_D)) {
-        entity->position.x += 1.0f * ctx->dt;
+        player->position.x += 1.0f * ctx->dt;
     }
 }
 
@@ -142,8 +180,12 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
 
     struct bh_sprite_entity entity = {
         .sprite = sprite,
-        .position = {  0.0f,  0.0f },
-        .scale = { 0.15f, 0.15f },
+        .position = {               0.0f,             0.0f },
+        .scale = {              0.15f,            0.15f },
+        .bb = {
+            { -0.15f, -0.15f },
+            { 0.15f, 0.15f },
+        },
         .callback = update_player_system,
     };
 

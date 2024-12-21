@@ -55,3 +55,8 @@ void m4_multiply(m4 dest, m4 mat) {
     }
     memcpy(dest, res, sizeof(res));
 }
+
+struct vec2 vec2_add(struct vec2 a, struct vec2 b) { return (struct vec2){ a.x + b.x, a.y + b.y }; }
+
+struct vec2 vec2_addf(struct vec2 v, float x) { return (struct vec2){ v.x + x, v.y + x }; }
+struct vec2 vec2_subf(struct vec2 v, float x) { return (struct vec2){ v.x - x, v.y - x }; }

@@ -17,4 +17,8 @@ struct vec2 {
     float x, y;
 };
 
+struct vec2 vec2_add(struct vec2 a, struct vec2 b);
+struct vec2 vec2_addf(struct vec2 v, float x);
+struct vec2 vec2_subf(struct vec2 v, float x);
+
 #endif // !BH_MATRIX_H

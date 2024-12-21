@@ -6,11 +6,6 @@
 
 #define QT_MAX_ELEMENTS 4
 
-struct bh_bounding_box {
-    struct vec2 top_left;
-    struct vec2 bottom_right;
-};
-
 bool is_point_in_box(struct bh_bounding_box box, struct vec2 point);
 bool do_boxes_intersect(struct bh_bounding_box box, struct bh_bounding_box other);
 
