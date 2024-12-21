@@ -84,6 +84,6 @@ void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity);
 void entities_free(struct bh_entity_ll* entities);
 
 void tick_all_entities(
-    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree, struct bh_sprite_batch* batch,
-    bh_program program
+    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
+    struct bh_sprite_batch* batch, bh_program program
 );

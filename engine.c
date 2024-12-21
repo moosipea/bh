@@ -309,7 +309,7 @@ void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
     }
 
     if (entities->last == NULL) {
-        entities->entities->entity = entity; 
+        entities->entities->entity = entity;
         entities->last = entities->entities;
     } else {
         entities->last->next = calloc(1, sizeof(struct bh_entity_ll));
@@ -337,28 +337,25 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
 }
 
 void tick_all_entities(
-    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree, struct bh_sprite_batch* batch,
-    bh_program program
+    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
+    struct bh_sprite_batch* batch, bh_program program
 ) {
-    struct bh_qtree next_qtree = {
-        .bb = qtree->bb
-    };
+    struct bh_qtree next_qtree = { .bb = qtree->bb };
 
     struct bh_entity_ll* node = entities;
 
     while (node != NULL) {
-        struct bh_sprite_entity *entity = &node->entity;
+        struct bh_sprite_entity* entity = &node->entity;
 
-        qtree_insert(&next_qtree, (struct bh_qtree_entity) {
-            .entity = entity,
-            .point = entity->position
-        });
+        qtree_insert(
+            &next_qtree, (struct bh_qtree_entity){ .entity = entity, .point = entity->position }
+        );
 
         entity->callback(state, entity);
         update_entity_transform(entity);
         batch_render(batch, entity->sprite, program);
 
-        node = node->next; 
+        node = node->next;
     }
 
     batch_finish(batch, program);

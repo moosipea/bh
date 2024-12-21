@@ -12,9 +12,7 @@ struct bh_bounding_box {
 };
 
 bool is_point_in_box(struct bh_bounding_box box, struct vec2 point);
-bool do_boxes_intersect(
-    struct bh_bounding_box box, struct bh_bounding_box other
-);
+bool do_boxes_intersect(struct bh_bounding_box box, struct bh_bounding_box other);
 
 struct bh_qtree_entity {
     struct vec2 point;
@@ -34,8 +32,7 @@ struct bh_qtree {
 };
 
 bool qtree_insert(struct bh_qtree* qtree, struct bh_qtree_entity point);
-struct bh_qtree_query
-qtree_query(struct bh_qtree* qtree, struct bh_bounding_box box);
+struct bh_qtree_query qtree_query(struct bh_qtree* qtree, struct bh_bounding_box box);
 void qtree_free(struct bh_qtree* qtree);
 
 struct bh_qtree_query {

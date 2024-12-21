@@ -8,10 +8,10 @@
 
 void m4_identity(m4 matrix) {
     const m4 identity = {
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 1, 0},
-        {0, 0, 0, 1},
+        { 1, 0, 0, 0 },
+        { 0, 1, 0, 0 },
+        { 0, 0, 1, 0 },
+        { 0, 0, 0, 1 },
     };
     memcpy(matrix, identity, sizeof(identity));
 }
@@ -32,10 +32,7 @@ void m4_scale(m4 matrix, float x, float y, float z) {
 
 void m4_rotation(m4 matrix, float x, float y, float z);
 
-void m4_ortho(
-    m4 matrix, float left, float right, float top, float bottom, float near,
-    float far
-) {
+void m4_ortho(m4 matrix, float left, float right, float top, float bottom, float near, float far) {
     m4_scale(matrix, bottom / right, 1.0, 1.0);
 
     // m4_scale(matrix, 2.0f / (right - left), 2.0f / (top - bottom), 2.0f /
@@ -52,8 +49,8 @@ void m4_multiply(m4 dest, m4 mat) {
     m4 res;
     for (size_t i = 0; i < 4; i++) {
         for (size_t j = 0; j < 4; j++) {
-            res[i][j] = dest[i][0] * mat[0][j] + dest[i][1] * mat[1][j] +
-                        dest[i][2] * mat[2][j] + dest[i][3] * mat[3][j];
+            res[i][j] = dest[i][0] * mat[0][j] + dest[i][1] * mat[1][j] + dest[i][2] * mat[2][j] +
+                        dest[i][3] * mat[3][j];
         }
     }
     memcpy(dest, res, sizeof(res));

@@ -4,9 +4,7 @@
 
 struct bh_ctx;
 struct bh_sprite_entity;
-typedef void (*bh_sprite_entity_cb)(
-    struct bh_ctx* state, struct bh_sprite_entity* entity
-);
+typedef void (*bh_sprite_entity_cb)(struct bh_ctx* state, struct bh_sprite_entity* entity);
 
 struct bh_sprite {
     GLuint64 texture_handle;
