@@ -23,5 +23,7 @@ struct bh_sprite_entity {
     struct vec2 scale;
     float rotation;
     struct bh_bounding_box bb;
+
     bh_sprite_entity_cb callback;
+    void* state;
 };

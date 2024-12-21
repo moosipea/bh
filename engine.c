@@ -1,5 +1,6 @@
 #include "engine.h"
 #include "entitydef.h"
+#include "matrix.h"
 #include "qtree.h"
 
 #include <stdbool.h>
@@ -322,6 +323,9 @@ void entities_free(struct bh_entity_ll* entities) {
     if (entities->next != NULL) {
         entities_free(entities->next);
     }
+    if (entities->entity.state) {
+        free(entities->entity.state);
+    }
     free(entities);
 }
 
@@ -334,6 +338,36 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
     m4_multiply(model_matrix, translation);
 
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
+}
+
+static inline struct vec2 box_centre(struct bh_bounding_box bb) {
+    return (struct vec2){ (bb.top_left.x + bb.bottom_right.x) / 2.0f,
+                          (bb.top_left.y + bb.bottom_right.y) / 2.0f };
+}
+
+static inline struct vec2 box_dimensions(struct bh_bounding_box bb) {
+    return (struct vec2){ bb.bottom_right.x - bb.top_left.x, bb.bottom_right.y - bb.top_left.y };
+}
+
+static inline void render_hitbox(
+    struct bh_sprite_entity* entity, GLuint64 texture, struct bh_sprite_batch* batch,
+    bh_program program
+) {
+    struct bh_sprite hitbox_sprite = {
+        .texture_handle = texture,
+    };
+
+    struct vec2 hitbox_centre = box_centre(entity->bb);
+    struct vec2 hitbox_dimensions = box_dimensions(entity->bb);
+
+    m4_scale(hitbox_sprite.transform, hitbox_dimensions.x, hitbox_dimensions.y, 1.0f);
+
+    m4 translation;
+    m4_translation(translation, hitbox_centre.x, hitbox_centre.y, 0.0f);
+    m4_multiply(hitbox_sprite.transform, translation);
+
+    memcpy(hitbox_sprite.transform, entity->sprite.transform, sizeof(m4));
+    batch_render(batch, hitbox_sprite, program);
 }
 
 void tick_all_entities(
@@ -354,6 +388,9 @@ void tick_all_entities(
         entity->callback(state, entity);
         update_entity_transform(entity);
         batch_render(batch, entity->sprite, program);
+#if 1
+        render_hitbox(entity, state->debug_texture, batch, program);
+#endif
 
         node = node->next;
     }

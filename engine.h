@@ -70,7 +70,8 @@ struct bh_ctx {
     struct bh_de_ll entities;
     struct bh_qtree entity_qtree;
 
-    GLuint64 bulb_texture;
+    GLuint64 star_texture;
+    GLuint debug_texture;
 
     bool keys_held[GLFW_KEY_LAST + 1];
 };

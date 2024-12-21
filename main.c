@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "engine.h"
 #include "entitydef.h"
@@ -9,7 +10,7 @@
 #include "qtree.h"
 #include "res/built_assets.h"
 
-#define TEST_SPRITES 32
+#define TEST_SPRITES 4
 
 /* Game state */
 static struct bh_ctx g_ctx = { 0 };
@@ -111,7 +112,7 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
     for (size_t i = 0; i < TEST_SPRITES; i++) {
 
         struct bh_sprite sprite = { 0 };
-        sprite.texture_handle = ctx->bulb_texture;
+        sprite.texture_handle = ctx->star_texture;
         m4_identity(sprite.transform);
 
         struct bh_sprite_entity entity = {
@@ -151,19 +152,33 @@ static inline struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float 
     };
 }
 
-// TODO: entity state, iframes
+struct player_state {
+    float immunity;
+};
+
+// TODO: I think the qtree is using an incorrect coordinate system!
+
 static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* player) {
     struct bh_qtree_query collision_query =
-        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, player->scale.x));
+        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, 0.05f));
 
+    struct player_state* state = player->state;
     for (size_t i = 0; i < collision_query.count; i++) {
-        if (entities_collide(player, collision_query.entities[i]->entity)) {
+        if (entities_collide(player, collision_query.entities[i]->entity) &&
+            state->immunity <= 0.01f) {
             printf("Collision!\n");
+            state->immunity = 0.5f;
             break;
         }
     }
 
     query_free(collision_query);
+
+    /* Update immunity timer */
+    state->immunity -= ctx->dt;
+    if (state->immunity < 0.0f) {
+        state->immunity = 0.0f;
+    }
 
     if (get_key(ctx, GLFW_KEY_A)) {
         player->position.x -= 1.0f * ctx->dt;
@@ -188,6 +203,11 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
         },
         .callback = update_player_system,
     };
+
+    struct player_state state = { .immunity = 0.0f };
+
+    entity.state = calloc(1, sizeof(struct player_state));
+    memcpy(entity.state, &state, sizeof(struct player_state));
 
     spawn_entity(&ctx->entities, entity);
 }
@@ -223,8 +243,13 @@ static inline bool init_ctx(struct bh_ctx* ctx) {
         .bottom_right = {  1.0f,  1.0f },
     };
 
-    ctx->bulb_texture = textures_load(&ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
-    if (!ctx->bulb_texture) {
+    ctx->star_texture = textures_load(&ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
+    if (!ctx->star_texture) {
+        return false;
+    }
+
+    ctx->debug_texture = textures_load(&ctx->textures, (void*)ASSET_debug, sizeof(ASSET_debug) - 1);
+    if (!ctx->debug_texture) {
         return false;
     }
 
