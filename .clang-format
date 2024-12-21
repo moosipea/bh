@@ -5,4 +5,4 @@ PointerAlignment: Left
 
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: Right
-AlignConsecutiveAssignments: Consecutive
+#AlignConsecutiveAssignments: Consecutive

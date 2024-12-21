@@ -20,4 +20,3 @@ struct bh_sprite_entity {
     float rotation;
     bh_sprite_entity_cb callback;
 };
-

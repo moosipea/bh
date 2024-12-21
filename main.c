@@ -113,13 +113,13 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
     for (size_t i = 0; i < TEST_SPRITES; i++) {
 
         struct bh_sprite sprite = {0};
-        sprite.texture_handle   = ctx->bulb_texture;
+        sprite.texture_handle = ctx->bulb_texture;
         m4_identity(sprite.transform);
 
         struct bh_sprite_entity entity = {
-            .sprite   = sprite,
+            .sprite = sprite,
             .position = {uniform_rand(), uniform_rand()},
-            .scale    = {         0.05f,          0.05f},
+            .scale = {         0.05f,          0.05f},
             .callback = test_entity_system,
         };
 
@@ -141,14 +141,14 @@ update_player_system(struct bh_ctx* context, struct bh_sprite_entity* entity) {
 
 static inline void spawn_player_entity(struct bh_ctx* ctx) {
     struct bh_sprite sprite = {0};
-    sprite.texture_handle   = textures_load(
+    sprite.texture_handle = textures_load(
         &ctx->textures, (void*)ASSET_player, sizeof(ASSET_player) - 1
     );
 
     struct bh_sprite_entity entity = {
-        .sprite   = sprite,
+        .sprite = sprite,
         .position = { 0.0f,  0.0f},
-        .scale    = {0.15f, 0.15f},
+        .scale = {0.15f, 0.15f},
         .callback = update_player_system,
     };
 
@@ -171,7 +171,7 @@ static void update_projection_matrix(struct bh_ctx* ctx) {
 }
 
 static inline bool init_ctx(struct bh_ctx* ctx) {
-    ctx->width  = 640;
+    ctx->width = 640;
     ctx->height = 480;
 
     if (!init_gl(ctx)) {
@@ -182,7 +182,7 @@ static inline bool init_ctx(struct bh_ctx* ctx) {
         return false;
     }
 
-    ctx->batch    = batch_init();
+    ctx->batch = batch_init();
     ctx->textures = (struct bh_textures){0};
     ctx->entities = (struct bh_qtree){
         .bb = {.top_left = {-1.0f, -1.0f}, .bottom_right = {1.0f, 1.0f}}
@@ -211,7 +211,7 @@ static inline void pre_frame(struct bh_ctx* ctx) {
     glfwGetFramebufferSize(ctx->window, &width, &height);
 
     if (width != ctx->width || height != ctx->height) {
-        ctx->width  = width;
+        ctx->width = width;
         ctx->height = height;
         glViewport(0, 0, ctx->width, ctx->height);
         update_projection_matrix(ctx);

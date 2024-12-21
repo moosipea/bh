@@ -54,9 +54,9 @@ static inline bool link_program(bh_program program) {
 
 bh_program
 create_program(const GLchar* vertex_src, const GLchar* fragment_src) {
-    bh_shader vertex_shader   = glCreateShader(GL_VERTEX_SHADER);
+    bh_shader vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     bh_shader fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    bh_program program        = glCreateProgram();
+    bh_program program = glCreateProgram();
 
     glAttachShader(program, vertex_shader);
     glAttachShader(program, fragment_shader);
@@ -158,7 +158,7 @@ load_png(void* png_data, size_t size, size_t* width, size_t* height) {
         return NULL;
     }
 
-    *width  = ihdr.width;
+    *width = ihdr.width;
     *height = ihdr.height;
 
     spng_ctx_free(ctx);
@@ -225,7 +225,7 @@ textures_load(struct bh_textures* textures, void* png_data, size_t size) {
 
     glMakeTextureHandleResidentARB(texture_handle);
 
-    textures->texture_ids[textures->count]     = texture;
+    textures->texture_ids[textures->count] = texture;
     textures->texture_handles[textures->count] = texture_handle;
     textures->count++;
 
@@ -324,10 +324,10 @@ void batch_finish(struct bh_sprite_batch* batch, bh_program program) {
 }
 
 void spawn_entity(struct bh_qtree* qtree, struct bh_sprite_entity entity) {
-    qtree_insert(qtree, (struct bh_qtree_entity) {
-        .entity = entity,
-        .point = entity.position
-    });
+    qtree_insert(
+        qtree,
+        (struct bh_qtree_entity){.entity = entity, .point = entity.position}
+    );
 }
 
 static inline void update_entity_transform(struct bh_sprite_entity* entity) {
@@ -341,15 +341,24 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
 }
 
-static inline void render_entity(struct bh_sprite_entity* entity, struct bh_sprite_batch *batch, bh_program program) {
+static inline void render_entity(
+    struct bh_sprite_entity* entity, struct bh_sprite_batch* batch,
+    bh_program program
+) {
     batch_render(batch, entity->sprite, program);
 }
 
-void tick_all_entities(struct bh_ctx* state, struct bh_qtree* entities, struct bh_sprite_batch *batch, bh_program program) {
-    struct bh_qtree_query query = qtree_query(entities, (struct bh_bounding_box) {
-        .top_left = { -1, -1 },
-        .bottom_right = { 1, 1 }
-    });
+void tick_all_entities(
+    struct bh_ctx* state, struct bh_qtree* entities,
+    struct bh_sprite_batch* batch, bh_program program
+) {
+    struct bh_qtree_query query = qtree_query(
+        entities,
+        (struct bh_bounding_box){
+            .top_left = {-1, -1},
+              .bottom_right = { 1,  1}
+    }
+    );
 
     for (size_t i = 0; i < query.count; i++) {
         struct bh_sprite_entity* entity = &query.entities[i]->entity;

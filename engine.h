@@ -6,8 +6,8 @@
 
 #include <stdbool.h>
 
-#include "matrix.h"
 #include "entitydef.h"
+#include "matrix.h"
 #include "qtree.h"
 
 #define BH_MAX_TEXTURES 256
@@ -71,5 +71,8 @@ void batch_render(
 void batch_finish(struct bh_sprite_batch* batch, bh_program program);
 void batch_delete(struct bh_sprite_batch batch);
 
-void spawn_entity(struct bh_qtree *qtree, struct bh_sprite_entity entity);
-void tick_all_entities(struct bh_ctx* state, struct bh_qtree* entities, struct bh_sprite_batch *batch, bh_program program);
+void spawn_entity(struct bh_qtree* qtree, struct bh_sprite_entity entity);
+void tick_all_entities(
+    struct bh_ctx* state, struct bh_qtree* entities,
+    struct bh_sprite_batch* batch, bh_program program
+);
