@@ -1,6 +1,4 @@
-#define GLFW_INCLUDE_NONE
 
-#include <GLFW/glfw3.h>
 #include <glad/gl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -8,27 +6,13 @@
 
 #include "engine.h"
 #include "error_macro.h"
+#include "qtree.h"
 #include "res/built_assets.h"
 
-#define TEST_SPRITES 64
+#define TEST_SPRITES 32
 
-static struct bh_ctx {
-    int width, height;
-    GLFWwindow* window;
-    bh_program program;
-    m4 projection_matrix;
-    float dt;
-
-    struct bh_sprite_batch batch;
-    struct bh_textures textures;
-    struct bh_sprite_ll* entities;
-
-    struct bh_sprite_ll* player_entity;
-
-    GLuint64 bulb_texture;
-
-    bool keys_held[GLFW_KEY_LAST + 1];
-} g_ctx = {0};
+/* Game state */
+static struct bh_ctx g_ctx = {0};
 
 static void
 glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -116,7 +100,8 @@ static inline float uniform_rand(void) {
     return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f;
 }
 
-static void test_entity_system(void* ctx, struct bh_sprite_entity* entity) {
+static void
+test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
     (void)ctx;
     entity->position.y -= 1.0f / 60.0f;
     if (entity->position.y <= -1.0f) {
@@ -143,7 +128,7 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
 }
 
 static void
-update_player_system(void* context, struct bh_sprite_entity* entity) {
+update_player_system(struct bh_ctx* context, struct bh_sprite_entity* entity) {
     struct bh_ctx* ctx = context;
 
     if (get_key(ctx, GLFW_KEY_A)) {
@@ -197,10 +182,11 @@ static inline bool init_ctx(struct bh_ctx* ctx) {
         return false;
     }
 
-    ctx->batch = batch_init();
-
-    struct bh_textures textures = {0};
-    ctx->textures               = textures;
+    ctx->batch    = batch_init();
+    ctx->textures = (struct bh_textures){0};
+    ctx->entities = (struct bh_qtree){
+        .bb = {.top_left = {-1.0f, -1.0f}, .bottom_right = {1.0f, 1.0f}}
+    };
 
     ctx->bulb_texture = textures_load(
         &ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1
@@ -244,18 +230,15 @@ static inline void main_loop(struct bh_ctx* ctx) {
     while (!glfwWindowShouldClose(ctx->window)) {
         pre_frame(ctx);
 
-        /* Tick */
-        tick_all_entities(ctx, ctx->entities);
-
-        /* Draw */
-        render_all_entities(&ctx->batch, ctx->entities, ctx->program);
+        /* Tick & render*/
+        tick_all_entities(ctx, &ctx->entities, &ctx->batch, ctx->program);
 
         post_frame(ctx);
     }
 }
 
 static inline void delete_ctx(struct bh_ctx ctx) {
-    kill_all_entities(ctx.entities);
+    qtree_free(&ctx.entities);
     textures_delete(ctx.textures);
     batch_delete(ctx.batch);
     delete_program(&ctx.program);

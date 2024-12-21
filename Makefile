@@ -26,7 +26,7 @@ CC := gcc
 BINARY := main
 CFLAGS := -Wall -Wextra -pedantic -ggdb
 	  
-OBJECTS := main.o engine.o matrix.o
+OBJECTS := main.o engine.o matrix.o qtree.o
 
 INCLUDES := -I$(GLFW_SOURCE_DIR)/include \
 	    -I$(SPNG_SOURCE_DIR)/spng \

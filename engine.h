@@ -1,9 +1,14 @@
-#ifndef BH_ENGINE_H
-#define BH_ENGINE_H
+#pragma once
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+#include <glad/gl.h>
+
+#include <stdbool.h>
 
 #include "matrix.h"
-#include <glad/gl.h>
-#include <stdlib.h>
+#include "entitydef.h"
+#include "qtree.h"
 
 #define BH_MAX_TEXTURES 256
 #define BH_BATCH_SIZE 1024
@@ -24,11 +29,6 @@ struct bh_mesh_handle {
 
 struct bh_mesh_handle upload_mesh(const GLfloat* vertices, size_t count);
 
-struct bh_sprite {
-    GLuint64 texture_handle;
-    m4 transform;
-};
-
 struct bh_textures {
     bh_texture texture_ids[BH_MAX_TEXTURES];
     GLuint64 texture_handles[BH_MAX_TEXTURES];
@@ -48,6 +48,22 @@ struct bh_sprite_batch {
     GLuint textures_ssbo;
 };
 
+struct bh_ctx {
+    int width, height;
+    GLFWwindow* window;
+    bh_program program;
+    m4 projection_matrix;
+    float dt;
+
+    struct bh_sprite_batch batch;
+    struct bh_textures textures;
+    struct bh_qtree entities;
+
+    GLuint64 bulb_texture;
+
+    bool keys_held[GLFW_KEY_LAST + 1];
+};
+
 struct bh_sprite_batch batch_init(void);
 void batch_render(
     struct bh_sprite_batch* batch, struct bh_sprite sprite, bh_program program
@@ -55,32 +71,5 @@ void batch_render(
 void batch_finish(struct bh_sprite_batch* batch, bh_program program);
 void batch_delete(struct bh_sprite_batch batch);
 
-struct bh_sprite_entity;
-typedef void (*bh_sprite_entity_cb)(
-    void* state, struct bh_sprite_entity* entity
-);
-
-struct bh_sprite_entity {
-    struct bh_sprite sprite;
-    struct vec2 position;
-    struct vec2 scale;
-    bh_sprite_entity_cb callback;
-};
-
-struct bh_sprite_ll {
-    struct bh_sprite_entity entity;
-    struct bh_sprite_ll* next;
-};
-
-struct bh_sprite_ll*
-spawn_entity(struct bh_sprite_ll** ll, struct bh_sprite_entity entity);
-void kill_entity(struct bh_sprite_ll** ll, struct bh_sprite_ll* to_be_deleted);
-void kill_all_entities(struct bh_sprite_ll* ll);
-
-void tick_all_entities(void* state, struct bh_sprite_ll* entities);
-void render_all_entities(
-    struct bh_sprite_batch* batch, struct bh_sprite_ll* entities,
-    bh_program program
-);
-
-#endif // !BH_ENGINE_H
+void spawn_entity(struct bh_qtree *qtree, struct bh_sprite_entity entity);
+void tick_all_entities(struct bh_ctx* state, struct bh_qtree* entities, struct bh_sprite_batch *batch, bh_program program);

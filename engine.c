@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "qtree.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -322,73 +323,11 @@ void batch_finish(struct bh_sprite_batch* batch, bh_program program) {
     batch->count = 0;
 }
 
-static struct bh_sprite_ll*
-init_sprite_ll_with(struct bh_sprite_entity entity) {
-    struct bh_sprite_ll ll = {
+void spawn_entity(struct bh_qtree* qtree, struct bh_sprite_entity entity) {
+    qtree_insert(qtree, (struct bh_qtree_entity) {
         .entity = entity,
-        .next   = NULL,
-    };
-
-    struct bh_sprite_ll* allocated = calloc(1, sizeof(struct bh_sprite_ll));
-    memcpy(allocated, &ll, sizeof(struct bh_sprite_ll));
-
-    return allocated;
-}
-
-struct bh_sprite_ll*
-spawn_entity(struct bh_sprite_ll** ll, struct bh_sprite_entity entity) {
-    if (ll == NULL) {
-        error("Received NULL instead of pointer to `struct bh_sprite_ll`");
-        return NULL;
-    }
-
-    if (*ll == NULL) {
-        *ll = init_sprite_ll_with(entity);
-        return *ll;
-    } else {
-        struct bh_sprite_ll* node = *ll;
-        while (node->next != NULL) {
-            node = node->next;
-        }
-
-        node->next = init_sprite_ll_with(entity);
-        return node->next;
-    }
-}
-
-void kill_entity(struct bh_sprite_ll** ll, struct bh_sprite_ll* to_be_deleted) {
-    if (!ll || !*ll) {
-        return;
-    }
-
-    if (*ll == to_be_deleted) {
-        *ll = to_be_deleted->next;
-        free(to_be_deleted);
-    } else {
-        struct bh_sprite_ll* node = *ll;
-        while (node->next != NULL) {
-            if (node->next == to_be_deleted) {
-                node->next = node->next->next;
-                free(to_be_deleted);
-                break;
-            }
-            node = node->next;
-        }
-    }
-}
-
-void kill_all_entities(struct bh_sprite_ll* ll) {
-    if (!ll) {
-        return;
-    }
-
-    struct bh_sprite_ll* node = ll;
-
-    while (node != NULL) {
-        struct bh_sprite_ll* free_me = node;
-        node                         = node->next;
-        free(free_me);
-    }
+        .point = entity.position
+    });
 }
 
 static inline void update_entity_transform(struct bh_sprite_entity* entity) {
@@ -402,26 +341,27 @@ static inline void update_entity_transform(struct bh_sprite_entity* entity) {
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
 }
 
-void tick_all_entities(void* state, struct bh_sprite_ll* entities) {
-    struct bh_sprite_ll* node = entities;
-
-    while (node != NULL) {
-        (node->entity.callback)(state, &node->entity);
-        update_entity_transform(&node->entity);
-        node = node->next;
-    }
+static inline void render_entity(struct bh_sprite_entity* entity, struct bh_sprite_batch *batch, bh_program program) {
+    batch_render(batch, entity->sprite, program);
 }
 
-void render_all_entities(
-    struct bh_sprite_batch* batch, struct bh_sprite_ll* entities,
-    bh_program program
-) {
-    struct bh_sprite_ll* node = entities;
+void tick_all_entities(struct bh_ctx* state, struct bh_qtree* entities, struct bh_sprite_batch *batch, bh_program program) {
+    struct bh_qtree_query query = qtree_query(entities, (struct bh_bounding_box) {
+        .top_left = { -1, -1 },
+        .bottom_right = { 1, 1 }
+    });
 
-    while (node != NULL) {
-        batch_render(batch, node->entity.sprite, program);
-        node = node->next;
+    for (size_t i = 0; i < query.count; i++) {
+        struct bh_sprite_entity* entity = &query.entities[i]->entity;
+        entity->callback(state, entity);
+
+        update_entity_transform(entity);
+        render_entity(entity, batch, program);
     }
 
     batch_finish(batch, program);
+
+    if (query.count) {
+        query_free(query);
+    }
 }
