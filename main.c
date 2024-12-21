@@ -18,6 +18,8 @@ static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, i
     (void)scancode;
     (void)mods;
     if (
+
+
             action == GLFW_PRESS) {
         g_ctx.keys_held[key] = true;
     } else if (action == GLFW_RELEASE) {
