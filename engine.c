@@ -355,7 +355,7 @@ static void render_bounding_box(
     struct vec2 hitbox_centre = box_centre(globalised_bb);
     struct vec2 hitbox_dimensions = box_dimensions(globalised_bb);
 
-    m4_scale(hitbox_sprite.transform, hitbox_dimensions.x, hitbox_dimensions.y, 1.0f);
+    m4_scale(hitbox_sprite.transform, hitbox_dimensions.x / 2.0f, hitbox_dimensions.y / 2.0f, 1.0f);
 
     m4 translation;
     m4_translation(translation, hitbox_centre.x, hitbox_centre.y, 0.0f);

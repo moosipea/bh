@@ -141,11 +141,9 @@ struct player_state {
     float immunity;
 };
 
-// TODO: I think the qtree is using an incorrect coordinate system!
-
 static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* player) {
     struct bh_qtree_query collision_query =
-        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, 0.05f));
+        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, 0.15f));
 
     struct player_state* state = player->state;
     for (size_t i = 0; i < collision_query.count; i++) {
