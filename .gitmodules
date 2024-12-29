@@ -13,3 +13,6 @@
 [submodule "external/libspng"]
 	path = external/libspng
 	url = https://github.com/randy408/libspng.git
+[submodule "external/freetype"]
+	path = external/freetype
+	url = https://gitlab.freedesktop.org/freetype/freetype.git
