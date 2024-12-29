@@ -30,16 +30,18 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
         sprite.texture_handle = star_texture;
         m4_identity(sprite.transform);
 
+        // clang-format off
         struct bh_sprite_entity entity = {
             .sprite = sprite,
-            .position = {     uniform_rand(),   uniform_rand() },
-            .scale = {              0.05f,            0.05f },
+            .position = { uniform_rand(), uniform_rand() },
+            .scale = { 0.05f, 0.05f },
             .bb = {
                 { -0.05f, 0.05f },
                 { 0.05f, -0.05f },
             },
             .callback = test_entity_system,
         };
+        // clang-format on
 
         spawn_entity(&ctx->entities, entity);
     }
@@ -96,10 +98,11 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
     sprite.texture_handle =
         textures_load(&ctx->textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
 
+    // clang-format off
     struct bh_sprite_entity entity = {
         .sprite = sprite,
-        .position = {               0.0f,             0.0f },
-        .scale = {              0.15f,            0.15f },
+        .position = { 0.0f, 0.0f },
+        .scale = { 0.15f, 0.15f },
         .bb = {
             { -0.075f, 0.075f },
             { 0.075f, -0.075f },
@@ -107,6 +110,7 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
         .type = BH_PLAYER,
         .callback = update_player_system,
     };
+    // clang-format on
 
     struct player_state state = { .immunity = 0.0f };
 

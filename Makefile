@@ -28,7 +28,7 @@ FT_LIB := $(FT_BUILD_DIR)/libfreetype.a
 
 CC := gcc
 BINARY := main
-CFLAGS := -Wall -Wextra -pedantic -ggdb
+CFLAGS := -Wall -Wextra -pedantic -ggdb -std=c99
 	  
 OBJECTS := main.o \
 	   engine.o \
