@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -pedantic
+CFLAGS := -Wall -Wextra -pedantic -std=c99
 
 EXECUTABLE := asset_builder
 ifeq ($(OS),Windows_NT)
@@ -7,9 +7,14 @@ ifeq ($(OS),Windows_NT)
 endif
 
 HEADER := built_assets.h
+SOURCE := built_assets.c
+OBJECT := built_assets.o
 
-$(HEADER): assets $(EXECUTABLE)
-	./$(EXECUTABLE) $< $@
+$(OBJECT): $(SOURCE)
+	$(CC) -c -o $@ $<
+
+$(SOURCE): assets $(EXECUTABLE)
+	./$(EXECUTABLE) $< $@ $(HEADER)
 
 $(EXECUTABLE): asset_builder.o
 	$(CC) -o $@ $^

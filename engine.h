@@ -4,11 +4,15 @@
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <stdbool.h>
 
 #include "entitydef.h"
 #include "matrix.h"
 #include "qtree.h"
+#include "res/built_assets.h"
 
 #define BH_MAX_TEXTURES 256
 #define BH_BATCH_SIZE 1024
@@ -57,6 +61,8 @@ struct bh_de_ll {
     struct bh_entity_ll* last;
 };
 
+typedef bool (*user_cb)(struct bh_ctx* ctx, void* user_state);
+
 struct bh_ctx {
     int width, height;
     GLFWwindow* window;
@@ -70,12 +76,18 @@ struct bh_ctx {
     struct bh_de_ll entities;
     struct bh_qtree entity_qtree;
 
-    GLuint64 star_texture;
     GLuint64 debug_texture;
     GLuint64 green_debug_texture;
 
-    bool keys_held[GLFW_KEY_LAST + 1];
+    FT_Library ft;
+
+    void* user_state;
 };
+
+bool init_ctx(struct bh_ctx* ctx, void* user_state, user_cb user_init);
+void ctx_run(struct bh_ctx* ctx);
+
+bool get_key(int glfw_key);
 
 struct bh_sprite_batch batch_init(void);
 void batch_render(struct bh_sprite_batch* batch, struct bh_sprite sprite, bh_program program);
