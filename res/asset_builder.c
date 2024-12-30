@@ -67,7 +67,7 @@ static void write_files(FILE *header, FILE* source, const char *dir_name, const 
     }
     
     size_t size = file_size(asset_file);
-    fprintf(header, "extern const unsigned char ASSET_%s[%zu];\n", name, size + 1);
+    fprintf(header, "extern const unsigned char ASSET_%s[%lu];\n", name, (unsigned long)size + 1);
     fprintf(source, "const unsigned char ASSET_%s[] = { ", name);
     
     write_file_data(source, asset_file);

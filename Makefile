@@ -34,6 +34,7 @@ OBJECTS := main.o \
 	   engine.o \
 	   matrix.o \
 	   qtree.o \
+	   renderer.o \
 	   res/built_assets.o
 
 INCLUDES := -I$(GLFW_SOURCE_DIR)/include \

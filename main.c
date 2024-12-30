@@ -8,6 +8,7 @@
 #include "entitydef.h"
 #include "error_macro.h"
 #include "qtree.h"
+#include "res/built_assets.h"
 
 #define TEST_SPRITES 256
 
@@ -23,7 +24,7 @@ static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* enti
 
 static inline void spawn_test_entities(struct bh_ctx* ctx) {
     GLuint64 star_texture =
-        textures_load(&ctx->textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
+        textures_load(&ctx->renderer.textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
     for (size_t i = 0; i < TEST_SPRITES; i++) {
 
         struct bh_sprite sprite = { 0 };
@@ -96,7 +97,7 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
 static inline void spawn_player_entity(struct bh_ctx* ctx) {
     struct bh_sprite sprite = { 0 };
     sprite.texture_handle =
-        textures_load(&ctx->textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
+        textures_load(&ctx->renderer.textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
 
     // clang-format off
     struct bh_sprite_entity entity = {

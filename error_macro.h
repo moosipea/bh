@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define error(...)                                                                                 \
     do {                                                                                           \
         fprintf(stderr, "%s:%d: ", __FILE__, __LINE__);                                            \

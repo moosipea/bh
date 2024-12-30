@@ -32,7 +32,13 @@ void m4_scale(m4 matrix, float x, float y, float z) {
 
 void m4_rotation(m4 matrix, float x, float y, float z);
 
+// TODO
 void m4_ortho(m4 matrix, float left, float right, float top, float bottom, float near, float far) {
+    (void)left;
+    (void)top;
+    (void)near;
+    (void)far;
+
     m4_scale(matrix, bottom / right, 1.0, 1.0);
 
     // m4_scale(matrix, 2.0f / (right - left), 2.0f / (top - bottom), 2.0f /
