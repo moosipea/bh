@@ -36,12 +36,12 @@ struct bh_ctx {
     void* user_state;
 };
 
-bool init_ctx(struct bh_ctx* ctx, void* user_state, user_cb user_init);
-void ctx_run(struct bh_ctx* ctx);
+bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init);
+void BH_RunContext(struct bh_ctx* ctx);
 
-bool get_key(int glfw_key);
+bool BH_GetKey(int glfw_key);
 
-void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity);
-void entities_free(struct bh_entity_ll* entities);
+void BH_SpawnEntity(struct bh_de_ll* entities, struct bh_sprite_entity entity);
+void BH_DeinitEntities(struct bh_entity_ll* entities);
 
-bool entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other);
+bool BH_DoEntitiesCollide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other);

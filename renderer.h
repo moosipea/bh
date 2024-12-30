@@ -10,15 +10,15 @@
 #define BH_MAX_TEXTURES 256
 #define BH_BATCH_SIZE 1024
 
-GLuint create_program(const GLchar* vertex_src, const GLchar* fragment_src);
-void delete_program(GLuint program);
+GLuint BH_InitProgram(const GLchar* vertex_src, const GLchar* fragment_src);
+void BH_DeinitProgram(GLuint program);
 
 struct bh_mesh_handle {
     GLuint vao_handle;
     GLuint vbo_handle;
 };
 
-struct bh_mesh_handle upload_mesh(const GLfloat* vertices, size_t count);
+struct bh_mesh_handle BH_UploadMesh(const GLfloat* vertices, size_t count);
 
 struct bh_textures {
     GLuint texture_ids[BH_MAX_TEXTURES];
@@ -26,8 +26,8 @@ struct bh_textures {
     size_t count;
 };
 
-GLuint64 textures_load(struct bh_textures* textures, void* png_data, size_t size);
-void textures_delete(struct bh_textures textures);
+GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size);
+void BH_DeinitTextures(struct bh_textures textures);
 
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;
@@ -48,12 +48,12 @@ struct bh_renderer {
     struct bh_sprite_batch batch;
 };
 
-struct bh_sprite_batch batch_init(void);
-void batch_render(struct bh_renderer* batch, struct bh_sprite sprite);
-void batch_finish(struct bh_renderer* batch);
-void batch_delete(struct bh_sprite_batch batch);
+struct bh_sprite_batch BH_InitBatch(void);
+void BH_RenderBatch(struct bh_renderer* batch, struct bh_sprite sprite);
+void BH_FinishBatch(struct bh_renderer* batch);
+void BH_DeinitBatch(struct bh_sprite_batch batch);
 
-bool renderer_init(struct bh_renderer* renderer);
-void renderer_begin_frame(struct bh_renderer* renderer);
-void renderer_end_frame(struct bh_renderer* renderer);
-void delete_renderer(struct bh_renderer* renderer);
+bool BH_InitRenderer(struct bh_renderer* renderer);
+void BH_RendererBeginFrame(struct bh_renderer* renderer);
+void BH_RendererEndFrame(struct bh_renderer* renderer);
+void BH_DeinitRenderer(struct bh_renderer* renderer);

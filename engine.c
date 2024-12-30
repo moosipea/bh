@@ -15,7 +15,7 @@
 
 #define RENDER_DEBUG_INFO
 
-void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
+void BH_SpawnEntity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
     if (entities->entities == NULL) {
         entities->entities = calloc(1, sizeof(struct bh_entity_ll));
     }
@@ -30,9 +30,9 @@ void spawn_entity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
     }
 }
 
-void entities_free(struct bh_entity_ll* entities) {
+void BH_DeinitEntities(struct bh_entity_ll* entities) {
     if (entities->next != NULL) {
-        entities_free(entities->next);
+        BH_DeinitEntities(entities->next);
     }
     if (entities->entity.state) {
         free(entities->entity.state);
@@ -59,9 +59,9 @@ static void render_bounding_box(
         .texture_handle = texture,
     };
 
-    struct bh_bounding_box globalised_bb = bb_make_global(offset, bb);
-    struct vec2 hitbox_centre = box_centre(globalised_bb);
-    struct vec2 hitbox_dimensions = box_dimensions(globalised_bb);
+    struct bh_bounding_box globalised_bb = BH_BoxToWorld(offset, bb);
+    struct vec2 hitbox_centre = BH_BoxCentre(globalised_bb);
+    struct vec2 hitbox_dimensions = BH_BoxDimensions(globalised_bb);
 
     m4_scale(hitbox_sprite.transform, hitbox_dimensions.x / 2.0f, hitbox_dimensions.y / 2.0f, 1.0f);
 
@@ -69,7 +69,7 @@ static void render_bounding_box(
     m4_translation(translation, hitbox_centre.x, hitbox_centre.y, 0.0f);
     m4_multiply(hitbox_sprite.transform, translation);
 
-    batch_render(renderer, hitbox_sprite);
+    BH_RenderBatch(renderer, hitbox_sprite);
 }
 #endif
 
@@ -79,7 +79,7 @@ static void render_qtree(struct bh_renderer* renderer, struct bh_qtree* qtree, G
         return;
     }
 
-    if (qtree_is_leaf(qtree)) {
+    if (BH_IsQTreeLeaf(qtree)) {
         render_bounding_box(renderer, qtree->bb, (struct vec2){ 0.0f, 0.0f }, texture);
     } else {
         render_qtree(renderer, qtree->top_left, texture);
@@ -101,13 +101,13 @@ static void tick_all_entities(
     while (node != NULL) {
         struct bh_sprite_entity* entity = &node->entity;
 
-        qtree_insert(
+        BH_InsertQTree(
             &next_qtree, (struct bh_qtree_entity){ .entity = entity, .point = entity->position }
         );
 
         entity->callback(state, entity);
         update_entity_transform(entity);
-        batch_render(renderer, entity->sprite);
+        BH_RenderBatch(renderer, entity->sprite);
 
 #ifdef RENDER_DEBUG_INFO
         render_bounding_box(renderer, entity->bb, entity->position, state->debug_texture);
@@ -120,16 +120,16 @@ static void tick_all_entities(
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    batch_finish(renderer);
+    BH_FinishBatch(renderer);
 
     /* Update qtree */
-    qtree_free(qtree);
+    BH_DeinitQTree(qtree);
     *qtree = next_qtree;
 }
 
-bool entities_collide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
-    return do_boxes_intersect(
-        bb_make_global(entity->position, entity->bb), bb_make_global(other->position, other->bb)
+bool BH_DoEntitiesCollide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
+    return BH_DoBoxesIntersect(
+        BH_BoxToWorld(entity->position, entity->bb), BH_BoxToWorld(other->position, other->bb)
     );
 }
 
@@ -146,7 +146,7 @@ static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, i
     }
 }
 
-bool get_key(int glfw_key) {
+bool BH_GetKey(int glfw_key) {
     if (glfw_key < 0 || glfw_key > GLFW_KEY_LAST) {
         error("Invalid key: %d", glfw_key);
         return false;
@@ -154,19 +154,19 @@ bool get_key(int glfw_key) {
     return GLOBAL_KEYS_HELD[glfw_key];
 }
 
-bool init_ctx(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
-    if (!renderer_init(&ctx->renderer))
+bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
+    if (!BH_InitRenderer(&ctx->renderer))
         return false;
     glfwSetKeyCallback(ctx->renderer.window, glfw_key_cb);
 
 #ifdef RENDER_DEBUG_INFO
     ctx->debug_texture =
-        textures_load(&ctx->renderer.textures, (void*)ASSET_debug, sizeof(ASSET_debug) - 1);
+        BH_LoadTexture(&ctx->renderer.textures, (void*)ASSET_debug, sizeof(ASSET_debug) - 1);
     if (!ctx->debug_texture)
         return false;
 
     ctx->green_debug_texture =
-        textures_load(&ctx->renderer.textures, (void*)ASSET_green_debug, sizeof(ASSET_debug) - 1);
+        BH_LoadTexture(&ctx->renderer.textures, (void*)ASSET_green_debug, sizeof(ASSET_debug) - 1);
     if (!ctx->green_debug_texture)
         return false;
 #endif
@@ -186,21 +186,21 @@ bool init_ctx(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
 static void begin_frame(struct bh_ctx* ctx) {
     glfwSetTime(0.0);
     glfwPollEvents();
-    renderer_begin_frame(&ctx->renderer);
+    BH_RendererBeginFrame(&ctx->renderer);
 }
 
 static void end_frame(struct bh_ctx* ctx) {
-    renderer_end_frame(&ctx->renderer);
+    BH_RendererEndFrame(&ctx->renderer);
     ctx->dt = (float)glfwGetTime();
 }
 
 static void delete_ctx(struct bh_ctx* ctx) {
-    qtree_free(&ctx->entity_qtree);
-    entities_free(ctx->entities.entities);
-    delete_renderer(&ctx->renderer);
+    BH_DeinitQTree(&ctx->entity_qtree);
+    BH_DeinitEntities(ctx->entities.entities);
+    BH_DeinitRenderer(&ctx->renderer);
 }
 
-void ctx_run(struct bh_ctx* ctx) {
+void BH_RunContext(struct bh_ctx* ctx) {
     while (!glfwWindowShouldClose(ctx->renderer.window)) {
         begin_frame(ctx);
         tick_all_entities(ctx, ctx->entities.entities, &ctx->entity_qtree, &ctx->renderer);

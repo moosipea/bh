@@ -5,26 +5,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-bool is_point_in_box(struct bh_bounding_box box, struct vec2 point) {
+bool BH_IsPointInBox(struct bh_bounding_box box, struct vec2 point) {
     return point.x >= box.top_left.x && point.x <= box.bottom_right.x &&
            point.y <= box.top_left.y && point.y >= box.bottom_right.y;
 }
 
-bool do_boxes_intersect(struct bh_bounding_box box, struct bh_bounding_box other) {
+bool BH_DoBoxesIntersect(struct bh_bounding_box box, struct bh_bounding_box other) {
     return box.top_left.x <= other.bottom_right.x && box.bottom_right.x >= other.top_left.x &&
            box.top_left.y >= other.bottom_right.y && box.bottom_right.y <= other.top_left.y;
 }
 
-struct vec2 box_centre(struct bh_bounding_box bb) {
+struct vec2 BH_BoxCentre(struct bh_bounding_box bb) {
     return (struct vec2){ (bb.top_left.x + bb.bottom_right.x) / 2.0f,
                           (bb.top_left.y + bb.bottom_right.y) / 2.0f };
 }
 
-struct vec2 box_dimensions(struct bh_bounding_box bb) {
+struct vec2 BH_BoxDimensions(struct bh_bounding_box bb) {
     return (struct vec2){ bb.bottom_right.x - bb.top_left.x, bb.bottom_right.y - bb.top_left.y };
 }
 
-struct bh_bounding_box bb_make_global(struct vec2 centre, struct bh_bounding_box dimensions) {
+struct bh_bounding_box BH_BoxToWorld(struct vec2 centre, struct bh_bounding_box dimensions) {
     return (struct bh_bounding_box){
         .top_left = vec2_add(dimensions.top_left, centre),
         .bottom_right = vec2_add(dimensions.bottom_right, centre),
@@ -43,7 +43,7 @@ static struct bh_qtree* create_subdivision(struct vec2 top_left, struct vec2 bot
 }
 
 static void qtree_subdivide(struct bh_qtree* qtree) {
-    const struct vec2 centre = box_centre(qtree->bb);
+    const struct vec2 centre = BH_BoxCentre(qtree->bb);
 
     qtree->top_left = create_subdivision(qtree->bb.top_left, centre);
     qtree->top_right = create_subdivision(
@@ -57,11 +57,11 @@ static void qtree_subdivide(struct bh_qtree* qtree) {
     qtree->bottom_right = create_subdivision(centre, qtree->bb.bottom_right);
 
     for (size_t i = 0; i < qtree->element_count; i++) {
-        qtree_insert(qtree, qtree->elements[i]);
+        BH_InsertQTree(qtree, qtree->elements[i]);
     }
 }
 
-bool qtree_is_leaf(struct bh_qtree* qtree) {
+bool BH_IsQTreeLeaf(struct bh_qtree* qtree) {
     /* TODO: assert here */
     if (qtree == NULL) {
         error("qtree == NULL");
@@ -70,27 +70,27 @@ bool qtree_is_leaf(struct bh_qtree* qtree) {
 }
 
 // See: https://en.wikipedia.org/wiki/Quadtree
-bool qtree_insert(struct bh_qtree* qtree, struct bh_qtree_entity entity) {
-    if (!is_point_in_box(qtree->bb, entity.point)) {
+bool BH_InsertQTree(struct bh_qtree* qtree, struct bh_qtree_entity entity) {
+    if (!BH_IsPointInBox(qtree->bb, entity.point)) {
         return false;
     }
 
-    if (qtree->element_count < QT_MAX_ELEMENTS && qtree_is_leaf(qtree)) {
+    if (qtree->element_count < QT_MAX_ELEMENTS && BH_IsQTreeLeaf(qtree)) {
         qtree->elements[qtree->element_count++] = entity;
         return true;
     }
 
-    if (qtree_is_leaf(qtree)) {
+    if (BH_IsQTreeLeaf(qtree)) {
         qtree_subdivide(qtree);
     }
 
-    if (qtree_insert(qtree->top_left, entity))
+    if (BH_InsertQTree(qtree->top_left, entity))
         return true;
-    if (qtree_insert(qtree->top_right, entity))
+    if (BH_InsertQTree(qtree->top_right, entity))
         return true;
-    if (qtree_insert(qtree->bottom_left, entity))
+    if (BH_InsertQTree(qtree->bottom_left, entity))
         return true;
-    if (qtree_insert(qtree->bottom_right, entity))
+    if (BH_InsertQTree(qtree->bottom_right, entity))
         return true;
 
     // Should be unreachable
@@ -123,11 +123,11 @@ static void qtree_query_recursively(
         return;
     }
 
-    if (!do_boxes_intersect(box, qtree->bb)) {
+    if (!BH_DoBoxesIntersect(box, qtree->bb)) {
         return;
     }
 
-    if (qtree_is_leaf(qtree)) {
+    if (BH_IsQTreeLeaf(qtree)) {
         for (size_t i = 0; i < qtree->element_count; i++) {
             query_append(query, &qtree->elements[i]);
         }
@@ -139,29 +139,29 @@ static void qtree_query_recursively(
     }
 }
 
-struct bh_qtree_query qtree_query(struct bh_qtree* qtree, struct bh_bounding_box box) {
+struct bh_qtree_query BH_QueryQTree(struct bh_qtree* qtree, struct bh_bounding_box box) {
     struct bh_qtree_query query = query_init();
     qtree_query_recursively(qtree, box, &query);
     return query;
 }
 
-void qtree_free(struct bh_qtree* qtree) {
+void BH_DeinitQTree(struct bh_qtree* qtree) {
     if (qtree->top_left) {
-        qtree_free(qtree->top_left);
+        BH_DeinitQTree(qtree->top_left);
         free(qtree->top_left);
     }
     if (qtree->top_right) {
-        qtree_free(qtree->top_right);
+        BH_DeinitQTree(qtree->top_right);
         free(qtree->top_right);
     }
     if (qtree->bottom_left) {
-        qtree_free(qtree->bottom_left);
+        BH_DeinitQTree(qtree->bottom_left);
         free(qtree->bottom_left);
     }
     if (qtree->bottom_right) {
-        qtree_free(qtree->bottom_right);
+        BH_DeinitQTree(qtree->bottom_right);
         free(qtree->bottom_right);
     }
 }
 
-void query_free(struct bh_qtree_query query) { free(query.entities); }
+void BH_DeinitQuery(struct bh_qtree_query query) { free(query.entities); }

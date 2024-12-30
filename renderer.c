@@ -50,7 +50,7 @@ static bool link_program(GLuint program) {
     return true;
 }
 
-GLuint create_program(const GLchar* vertex_src, const GLchar* fragment_src) {
+GLuint BH_InitProgram(const GLchar* vertex_src, const GLchar* fragment_src) {
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
     GLuint program = glCreateProgram();
@@ -79,9 +79,9 @@ GLuint create_program(const GLchar* vertex_src, const GLchar* fragment_src) {
     return program;
 }
 
-void delete_program(GLuint program) { glDeleteProgram(program); }
+void BH_DeinitProgram(GLuint program) { glDeleteProgram(program); }
 
-struct bh_mesh_handle upload_mesh(const GLfloat* vertices, size_t count) {
+struct bh_mesh_handle BH_UploadMesh(const GLfloat* vertices, size_t count) {
     struct bh_mesh_handle res = { 0 };
 
     glGenVertexArrays(1, &res.vao_handle);
@@ -187,7 +187,7 @@ static GLuint create_texture(void* png_data, size_t size) {
     return texture;
 }
 
-GLuint64 textures_load(struct bh_textures* textures, void* png_data, size_t size) {
+GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size) {
     if (textures->count >= BH_MAX_TEXTURES) {
         error("Couldn't load texture, textures->count exceeds BH_MAX_TEXTURES");
         return 0;
@@ -216,7 +216,7 @@ GLuint64 textures_load(struct bh_textures* textures, void* png_data, size_t size
     return texture_handle;
 }
 
-void textures_delete(struct bh_textures textures) {
+void BH_DeinitTextures(struct bh_textures textures) {
     for (size_t i = 0; i < textures.count; i++) {
         glMakeTextureHandleNonResidentARB(textures.texture_handles[i]);
     }
@@ -232,7 +232,7 @@ static GLuint create_ssbo(const void* buffer, size_t size) {
     return id;
 }
 
-struct bh_sprite_batch batch_init(void) {
+struct bh_sprite_batch BH_InitBatch(void) {
     struct bh_sprite_batch res = { 0 };
 
     /* For use with GL_TRIANGLE_FAN */
@@ -240,19 +240,19 @@ struct bh_sprite_batch batch_init(void) {
     const GLfloat vertices[] = { -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
                                  1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f };
 
-    res.mesh = upload_mesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
+    res.mesh = BH_UploadMesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
     res.instances_ssbo = create_ssbo(res.instance_transforms, sizeof(res.instance_transforms));
     res.textures_ssbo = create_ssbo(res.instance_textures, sizeof(res.instance_textures));
 
     return res;
 }
 
-void batch_delete(struct bh_sprite_batch batch) {
+void BH_DeinitBatch(struct bh_sprite_batch batch) {
     glDeleteBuffers(1, &batch.textures_ssbo);
     glDeleteBuffers(1, &batch.instances_ssbo);
 }
 
-void batch_render(struct bh_renderer* renderer, struct bh_sprite sprite) {
+void BH_RenderBatch(struct bh_renderer* renderer, struct bh_sprite sprite) {
     struct bh_sprite_batch* batch = &renderer->batch;
     /* Insert sprite data into batch array */
     memcpy(&batch->instance_transforms[batch->count], &sprite.transform, sizeof(m4));
@@ -261,7 +261,7 @@ void batch_render(struct bh_renderer* renderer, struct bh_sprite sprite) {
 
     /* Draw the batch when it is full */
     if (batch->count >= BH_BATCH_SIZE) {
-        batch_finish(renderer);
+        BH_FinishBatch(renderer);
     }
 }
 
@@ -278,7 +278,7 @@ static void batch_drawcall(struct bh_renderer* renderer) {
     glUseProgram(0);
 }
 
-void batch_finish(struct bh_renderer* renderer) {
+void BH_FinishBatch(struct bh_renderer* renderer) {
     struct bh_sprite_batch* batch = &renderer->batch;
     /* Sync SSBO contents */
     glNamedBufferSubData(
@@ -354,7 +354,7 @@ static bool init_gl(struct bh_renderer* renderer) {
 }
 
 static bool init_shaders(struct bh_renderer* renderer) {
-    renderer->program = create_program((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
+    renderer->program = BH_InitProgram((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
     if (renderer->program) {
         glUseProgram(renderer->program);
         return true;
@@ -375,7 +375,7 @@ static void update_projection_matrix(struct bh_renderer* renderer) {
     );
 }
 
-bool renderer_init(struct bh_renderer* renderer) {
+bool BH_InitRenderer(struct bh_renderer* renderer) {
     renderer->width = 640;
     renderer->height = 480;
 
@@ -384,13 +384,13 @@ bool renderer_init(struct bh_renderer* renderer) {
     if (!init_shaders(renderer))
         return false;
 
-    renderer->batch = batch_init();
+    renderer->batch = BH_InitBatch();
     update_projection_matrix(renderer);
 
     return true;
 }
 
-void renderer_begin_frame(struct bh_renderer* renderer) {
+void BH_RendererBeginFrame(struct bh_renderer* renderer) {
     int width, height;
     glfwGetFramebufferSize(renderer->window, &width, &height);
 
@@ -405,12 +405,12 @@ void renderer_begin_frame(struct bh_renderer* renderer) {
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void renderer_end_frame(struct bh_renderer* renderer) { glfwSwapBuffers(renderer->window); }
+void BH_RendererEndFrame(struct bh_renderer* renderer) { glfwSwapBuffers(renderer->window); }
 
-void delete_renderer(struct bh_renderer* renderer) {
-    textures_delete(renderer->textures);
-    batch_delete(renderer->batch);
-    delete_program(renderer->program);
+void BH_DeinitRenderer(struct bh_renderer* renderer) {
+    BH_DeinitTextures(renderer->textures);
+    BH_DeinitBatch(renderer->batch);
+    BH_DeinitProgram(renderer->program);
     glfwDestroyWindow(renderer->window);
     glfwTerminate();
 }
