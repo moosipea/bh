@@ -385,6 +385,8 @@ bool renderer_init(struct bh_renderer* renderer) {
         return false;
 
     renderer->batch = batch_init();
+    update_projection_matrix(renderer);
+
     return true;
 }
 
