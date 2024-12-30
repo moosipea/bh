@@ -61,8 +61,8 @@ struct player_state {
 };
 
 static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* player) {
-    struct bh_qtree_query collision_query =
-        qtree_query(&ctx->entity_qtree, expand_bb(player->bb, 0.15f));
+    struct bh_bounding_box bb = bb_make_global(player->position, expand_bb(player->bb, 0.15f));
+    struct bh_qtree_query collision_query = qtree_query(&ctx->entity_qtree, bb);
 
     struct player_state* state = player->state;
     for (size_t i = 0; i < collision_query.count; i++) {
@@ -74,7 +74,7 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
 
         if (entities_collide(player, entity) && state->immunity <= 0.01f) {
             printf("Collision!\n");
-            state->immunity = 0.5f;
+            state->immunity = 0.33f;
             break;
         }
     }
@@ -109,7 +109,7 @@ static inline void spawn_player_entity(struct bh_ctx* ctx) {
     // clang-format off
     struct bh_sprite_entity entity = {
         .sprite = sprite,
-        .position = { 0.0f, 0.0f },
+        .position = { -0.5f, -0.5f },
         .scale = { 0.15f, 0.15f },
         .bb = {
             { -0.075f, 0.075f },
