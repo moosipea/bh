@@ -10,14 +10,15 @@
 #include "qtree.h"
 #include "res/built_assets.h"
 
-#define TEST_SPRITES 256
+#define TEST_SPRITES 16
 
 static inline float uniform_rand(void) { return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f; }
 
 static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
     (void)ctx;
-    entity->position.y -= 1.0f / 60.0f;
+    entity->position.y -= 1.0f / 120.0f;
     if (entity->position.y <= -1.0f) {
+        entity->position.x = uniform_rand();
         entity->position.y = 1.0f;
     }
 }
@@ -50,8 +51,8 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
 
 static inline struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
     return (struct bh_bounding_box){
-        .top_left = vec2_subf(bb.top_left, by),
-        .bottom_right = vec2_addf(bb.bottom_right, by),
+        .top_left = {     bb.top_left.x - by,     bb.top_left.y + by },
+        .bottom_right = { bb.bottom_right.x + by, bb.bottom_right.y - by }
     };
 }
 
@@ -86,6 +87,12 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
         state->immunity = 0.0f;
     }
 
+    if (get_key(GLFW_KEY_W)) {
+        player->position.y += 1.0f * ctx->dt;
+    }
+    if (get_key(GLFW_KEY_S)) {
+        player->position.y -= 1.0f * ctx->dt;
+    }
     if (get_key(GLFW_KEY_A)) {
         player->position.x -= 1.0f * ctx->dt;
     }

@@ -108,6 +108,7 @@ static void tick_all_entities(
         entity->callback(state, entity);
         update_entity_transform(entity);
         batch_render(renderer, entity->sprite);
+
 #ifdef RENDER_DEBUG_INFO
         render_bounding_box(renderer, entity->bb, entity->position, state->debug_texture);
 #endif

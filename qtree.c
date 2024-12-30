@@ -55,9 +55,14 @@ static inline void qtree_subdivide(struct bh_qtree* qtree) {
         (struct vec2){ centre.x, qtree->bb.bottom_right.y }
     );
     qtree->bottom_right = create_subdivision(centre, qtree->bb.bottom_right);
+
+    for (size_t i = 0; i < qtree->element_count; i++) {
+        qtree_insert(qtree, qtree->elements[i]);
+    }
 }
 
 bool qtree_is_leaf(struct bh_qtree* qtree) {
+    /* TODO: assert here */
     if (qtree == NULL) {
         error("qtree == NULL");
     }
@@ -77,9 +82,6 @@ bool qtree_insert(struct bh_qtree* qtree, struct bh_qtree_entity entity) {
 
     if (qtree_is_leaf(qtree)) {
         qtree_subdivide(qtree);
-        for (size_t i = 0; i < qtree->element_count; i++) {
-            qtree_insert(qtree, qtree->elements[i]);
-        }
     }
 
     if (qtree_insert(qtree->top_left, entity))
