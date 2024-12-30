@@ -31,7 +31,7 @@ static bool compile_shader(GLuint shader, const GLchar* src) {
     return true;
 }
 
-static inline bool link_program(GLuint program) {
+static bool link_program(GLuint program) {
     glLinkProgram(program);
 
     GLint status, log_length;
@@ -106,7 +106,7 @@ struct bh_mesh_handle upload_mesh(const GLfloat* vertices, size_t count) {
     return res;
 }
 
-static inline void* load_png(void* png_data, size_t size, size_t* width, size_t* height) {
+static void* load_png(void* png_data, size_t size, size_t* width, size_t* height) {
     spng_ctx* ctx = spng_ctx_new(0);
     if (ctx == NULL) {
         error("Failed to initialise spng context");
@@ -155,7 +155,7 @@ static inline void* load_png(void* png_data, size_t size, size_t* width, size_t*
     return decoded_image;
 }
 
-static inline GLuint upload_texture(void* image, size_t width, size_t height) {
+static GLuint upload_texture(void* image, size_t width, size_t height) {
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -171,7 +171,7 @@ static inline GLuint upload_texture(void* image, size_t width, size_t height) {
     return texture;
 }
 
-static inline GLuint create_texture(void* png_data, size_t size) {
+static GLuint create_texture(void* png_data, size_t size) {
     void* image_data;
     size_t width, height;
 
@@ -265,7 +265,7 @@ void batch_render(struct bh_renderer* renderer, struct bh_sprite sprite) {
     }
 }
 
-static inline void batch_drawcall(struct bh_renderer* renderer) {
+static void batch_drawcall(struct bh_renderer* renderer) {
     glUseProgram(renderer->program);
     glBindVertexArray(renderer->batch.mesh.vao_handle);
     glEnableVertexAttribArray(0);
@@ -299,7 +299,7 @@ void batch_finish(struct bh_renderer* renderer) {
     batch->count = 0;
 }
 
-static inline bool init_glfw(struct bh_renderer* renderer) {
+static bool init_glfw(struct bh_renderer* renderer) {
     if (!glfwInit()) {
         error("GLFW initialization failed");
         return false;
@@ -331,7 +331,7 @@ static void GLAPIENTRY gl_error_cb(
 }
 #endif
 
-static inline bool init_gl(struct bh_renderer* renderer) {
+static bool init_gl(struct bh_renderer* renderer) {
     if (!init_glfw(renderer)) {
         return false;
     }
@@ -353,7 +353,7 @@ static inline bool init_gl(struct bh_renderer* renderer) {
     return true;
 }
 
-static inline bool init_shaders(struct bh_renderer* renderer) {
+static bool init_shaders(struct bh_renderer* renderer) {
     renderer->program = create_program((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
     if (renderer->program) {
         glUseProgram(renderer->program);

@@ -31,7 +31,7 @@ struct bh_bounding_box bb_make_global(struct vec2 centre, struct bh_bounding_box
     };
 }
 
-static inline struct bh_qtree* create_subdivision(struct vec2 top_left, struct vec2 bottom_right) {
+static struct bh_qtree* create_subdivision(struct vec2 top_left, struct vec2 bottom_right) {
     struct bh_qtree* qtree = calloc(1, sizeof(struct bh_qtree));
 
     qtree->bb = (struct bh_bounding_box){
@@ -42,7 +42,7 @@ static inline struct bh_qtree* create_subdivision(struct vec2 top_left, struct v
     return qtree;
 }
 
-static inline void qtree_subdivide(struct bh_qtree* qtree) {
+static void qtree_subdivide(struct bh_qtree* qtree) {
     const struct vec2 centre = box_centre(qtree->bb);
 
     qtree->top_left = create_subdivision(qtree->bb.top_left, centre);

@@ -40,7 +40,7 @@ void entities_free(struct bh_entity_ll* entities) {
     free(entities);
 }
 
-static inline void update_entity_transform(struct bh_sprite_entity* entity) {
+static void update_entity_transform(struct bh_sprite_entity* entity) {
     m4 model_matrix;
     m4 translation;
 

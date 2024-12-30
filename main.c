@@ -12,7 +12,7 @@
 
 #define TEST_SPRITES 16
 
-static inline float uniform_rand(void) { return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f; }
+static float uniform_rand(void) { return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f; }
 
 static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
     (void)ctx;
@@ -23,7 +23,7 @@ static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* enti
     }
 }
 
-static inline void spawn_test_entities(struct bh_ctx* ctx) {
+static void spawn_test_entities(struct bh_ctx* ctx) {
     GLuint64 star_texture =
         textures_load(&ctx->renderer.textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
     for (size_t i = 0; i < TEST_SPRITES; i++) {
@@ -49,7 +49,7 @@ static inline void spawn_test_entities(struct bh_ctx* ctx) {
     }
 }
 
-static inline struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
+static struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
     return (struct bh_bounding_box){
         .top_left = {     bb.top_left.x - by,     bb.top_left.y + by },
         .bottom_right = { bb.bottom_right.x + by, bb.bottom_right.y - by }
@@ -101,7 +101,7 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
     }
 }
 
-static inline void spawn_player_entity(struct bh_ctx* ctx) {
+static void spawn_player_entity(struct bh_ctx* ctx) {
     struct bh_sprite sprite = { 0 };
     sprite.texture_handle =
         textures_load(&ctx->renderer.textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
