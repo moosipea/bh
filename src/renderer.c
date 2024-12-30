@@ -6,8 +6,8 @@
 #define SPNG_STATIC
 #include <spng.h>
 
+#include "../res/built_assets.h"
 #include "error_macro.h"
-#include "res/built_assets.h"
 
 static bool compile_shader(GLuint shader, const GLchar* src) {
     glShaderSource(shader, 1, &src, NULL);

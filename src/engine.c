@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../res/built_assets.h"
 #include "error_macro.h"
 #include "renderer.h"
-#include "res/built_assets.h"
 
 #define RENDER_DEBUG_INFO
 

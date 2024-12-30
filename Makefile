@@ -66,7 +66,7 @@ endif
 $(BINARY): dependencies assets $(OBJECTS) 
 	$(CC) -o $@ $(OBJECTS) $(LIB_DIRS) $(LIBS)
 
-%.o: %.c
+%.o: src/%.c
 	$(CC) -c $(CFLAGS) $(INCLUDES) $<
 
 .PHONY: assets

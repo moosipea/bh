@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../res/built_assets.h"
 #include "engine.h"
 #include "entitydef.h"
 #include "error_macro.h"
 #include "qtree.h"
-#include "res/built_assets.h"
 
 #define TEST_SPRITES 16
 
