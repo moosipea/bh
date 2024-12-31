@@ -5,16 +5,23 @@ layout (location = 1) in vec2 aUVs;
 
 uniform mat4 projection_matrix;
 
+struct sprite {
+    mat4 transform;
+    uint flags;
+};
+
 layout(binding = 2, std430) readonly buffer ssbo1 {
-    mat4 sprite_matrices[];
+    sprite sprite_data[];
 };
 
 out vec2 fUVs;
-flat out int fInstance;
+flat out uint fInstance;
+flat out uint fFlags;
 
 void main() {
-    gl_Position = projection_matrix * sprite_matrices[gl_InstanceID] * vec4(aPos, 1.0);
+    gl_Position = projection_matrix * sprite_data[gl_InstanceID].transform * vec4(aPos, 1.0);
     fUVs = aUVs;
     fInstance = gl_InstanceID;
+    fFlags = sprite_data[gl_InstanceID].flags;
 }
 

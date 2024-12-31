@@ -32,9 +32,15 @@ struct bh_textures {
 GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size);
 void BH_DeinitTextures(struct bh_textures textures);
 
+struct bh_instance_data {
+    m4 transform;
+    GLuint flags;
+    uint32_t padding[3];
+};
+
 struct bh_sprite_batch {
     struct bh_mesh_handle mesh;
-    m4 instance_transforms[BH_BATCH_SIZE];
+    struct bh_instance_data instance_data[BH_BATCH_SIZE];
     GLuint64 instance_textures[BH_BATCH_SIZE];
     size_t count;
     GLuint instances_ssbo;

@@ -106,7 +106,6 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
         m4_scale(sprite.transform, 1.0f / 16.0f, 1.0f / 16.0f, 1.0f);
 
         m4 translation;
-        printf("pen: %f\n", pen);
         m4_translation(translation, pen, 0, 0);
 
         m4_multiply(sprite.transform, translation);
@@ -114,7 +113,6 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
         BH_RenderBatch(renderer, sprite);
 
         pen += (glyph.advance / 64.0) / 128.0f;
-        // pen += glyph.advance;
     }
 }
 

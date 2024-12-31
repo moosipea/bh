@@ -251,7 +251,7 @@ struct bh_sprite_batch BH_InitBatch(void) {
                                  1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f };
 
     res.mesh = BH_UploadMesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
-    res.instances_ssbo = create_ssbo(res.instance_transforms, sizeof(res.instance_transforms));
+    res.instances_ssbo = create_ssbo(res.instance_data, sizeof(res.instance_data));
     res.textures_ssbo = create_ssbo(res.instance_textures, sizeof(res.instance_textures));
 
     return res;
@@ -265,7 +265,8 @@ void BH_DeinitBatch(struct bh_sprite_batch batch) {
 void BH_RenderBatch(struct bh_renderer* renderer, struct bh_sprite sprite) {
     struct bh_sprite_batch* batch = &renderer->batch;
     /* Insert sprite data into batch array */
-    memcpy(&batch->instance_transforms[batch->count], &sprite.transform, sizeof(m4));
+    memcpy(batch->instance_data[batch->count].transform, sprite.transform, sizeof(m4));
+    batch->instance_data[batch->count].flags = sprite.flags;
     batch->instance_textures[batch->count] = sprite.texture_handle;
     batch->count++;
 
@@ -292,7 +293,8 @@ void BH_FinishBatch(struct bh_renderer* renderer) {
     struct bh_sprite_batch* batch = &renderer->batch;
     /* Sync SSBO contents */
     glNamedBufferSubData(
-        batch->instances_ssbo, 0, batch->count * sizeof(m4), batch->instance_transforms
+        batch->instances_ssbo, 0, batch->count * sizeof(struct bh_instance_data),
+        batch->instance_data
     );
     glNamedBufferSubData(
         batch->textures_ssbo, 0, batch->count * sizeof(GLuint64), batch->instance_textures
