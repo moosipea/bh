@@ -1,4 +1,6 @@
 #include "renderer.h"
+#include "freetype/freetype.h"
+#include "freetype/ftimage.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -187,19 +189,12 @@ static GLuint create_texture(void* png_data, size_t size) {
     return texture;
 }
 
-GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size) {
+static GLuint64 append_new_texture_handle(struct bh_textures* textures, GLuint texture) {
     if (textures->count >= BH_MAX_TEXTURES) {
         error("Couldn't load texture, textures->count exceeds BH_MAX_TEXTURES");
         return 0;
     }
 
-    GLuint texture = create_texture(png_data, size);
-    if (!texture) {
-        error("Couldn't create texture");
-        return 0;
-    }
-
-    /* Create bindless texture handle */
     GLuint64 texture_handle = glGetTextureHandleARB(texture);
 
     if (!texture_handle) {
@@ -212,6 +207,21 @@ GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t siz
     textures->texture_ids[textures->count] = texture;
     textures->texture_handles[textures->count] = texture_handle;
     textures->count++;
+
+    return texture_handle;
+}
+
+GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size) {
+    GLuint texture = create_texture(png_data, size);
+    if (!texture) {
+        error("Couldn't create texture");
+        return 0;
+    }
+
+    GLuint64 texture_handle = append_new_texture_handle(textures, texture);
+    if (!texture_handle) {
+        return 0;
+    }
 
     return texture_handle;
 }
@@ -362,6 +372,75 @@ static bool init_shaders(struct bh_renderer* renderer) {
     return false;
 }
 
+static GLuint upload_glyph_texture(FT_Bitmap bitmap) {
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RED, bitmap.width, bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
+        bitmap.buffer
+    );
+
+    return texture;
+}
+
+static void preload_glyphs(struct bh_font* font, FT_Face face) {
+    for (unsigned char ch = 0; ch < MAX_CHARACTER; ch++) {
+        if (FT_Load_Char(face, ch, FT_LOAD_RENDER)) {
+            continue;
+        }
+
+        GLuint texture = upload_glyph_texture(face->glyph->bitmap);
+        GLuint64 handle = append_new_texture_handle(&font->textures, texture);
+
+        font->glyphs[ch] = (struct bh_glyph){ .texture = handle,
+                                              .width = face->glyph->bitmap.width,
+                                              .height = face->glyph->bitmap.rows,
+                                              .bearing_x = face->glyph->bitmap_left,
+                                              .bearing_y = face->glyph->bitmap_top,
+                                              .advance = face->glyph->advance.x };
+    }
+}
+
+static bool
+init_font(FT_Library ft, struct bh_font* font, size_t font_size, void* data, size_t size) {
+    FT_Face face;
+
+    if (FT_New_Memory_Face(ft, data, size, 0, &face)) {
+        error("Couldn't load font");
+        return false;
+    }
+
+    if (FT_Set_Pixel_Sizes(face, 0, font_size)) {
+        error("Couldn't set font size");
+        return false;
+    }
+
+    preload_glyphs(font, face);
+
+    FT_Done_Face(face);
+
+    return true;
+}
+
+static void deinit_font(struct bh_font font) { BH_DeinitTextures(font.textures); }
+
+static bool init_freetype(struct bh_renderer* renderer) {
+    if (FT_Init_FreeType(&renderer->ft)) {
+        error("FreeType initialisation failed");
+        return false;
+    }
+    return true;
+}
+
+static void deinit_freetype(FT_Library ft) { FT_Done_FreeType(ft); }
+
 static void update_projection_matrix(struct bh_renderer* renderer) {
     m4_scale(renderer->projection_matrix, 1.0f, 1.0f, 1.0f);
 
@@ -382,6 +461,10 @@ bool BH_InitRenderer(struct bh_renderer* renderer) {
     if (!init_gl(renderer))
         return false;
     if (!init_shaders(renderer))
+        return false;
+    if (!init_freetype(renderer))
+        return false;
+    if (!init_font(renderer->ft, &renderer->font, 16, (void*)ASSET_font, sizeof(ASSET_font) - 1))
         return false;
 
     renderer->batch = BH_InitBatch();
@@ -408,9 +491,13 @@ void BH_RendererBeginFrame(struct bh_renderer* renderer) {
 void BH_RendererEndFrame(struct bh_renderer* renderer) { glfwSwapBuffers(renderer->window); }
 
 void BH_DeinitRenderer(struct bh_renderer* renderer) {
+    deinit_font(renderer->font);
+    deinit_freetype(renderer->ft);
+
     BH_DeinitTextures(renderer->textures);
     BH_DeinitBatch(renderer->batch);
     BH_DeinitProgram(renderer->program);
+
     glfwDestroyWindow(renderer->window);
     glfwTerminate();
 }

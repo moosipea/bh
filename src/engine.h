@@ -1,8 +1,5 @@
 #pragma once
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #include <stdbool.h>
 
 #include "entitydef.h"
@@ -30,8 +27,6 @@ struct bh_ctx {
 
     GLuint64 debug_texture;
     GLuint64 green_debug_texture;
-
-    FT_Library ft;
 
     void* user_state;
 };

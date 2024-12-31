@@ -4,6 +4,9 @@
 #include <GLFW/glfw3.h>
 #include <glad/gl.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include "entitydef.h"
 #include "matrix.h"
 
@@ -38,6 +41,20 @@ struct bh_sprite_batch {
     GLuint textures_ssbo;
 };
 
+#define MAX_CHARACTER 128
+
+struct bh_glyph {
+    GLuint64 texture;
+    int width, height;
+    int bearing_x, bearing_y;
+    int advance;
+};
+
+struct bh_font {
+    struct bh_glyph glyphs[MAX_CHARACTER];
+    struct bh_textures textures;
+};
+
 struct bh_renderer {
     GLFWwindow* window;
     int width, height;
@@ -46,6 +63,9 @@ struct bh_renderer {
 
     struct bh_textures textures;
     struct bh_sprite_batch batch;
+
+    FT_Library ft;
+    struct bh_font font;
 };
 
 struct bh_sprite_batch BH_InitBatch(void);

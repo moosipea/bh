@@ -90,6 +90,34 @@ static void render_qtree(struct bh_renderer* renderer, struct bh_qtree* qtree, G
 }
 #endif
 
+static void render_text(struct bh_renderer* renderer, const char* text) {
+    float pen = 0.0f;
+
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        unsigned char ch = text[i];
+        if (ch >= 128) {
+            continue;
+        }
+
+        struct bh_glyph glyph = renderer->font.glyphs[ch];
+        struct bh_sprite sprite;
+        sprite.texture_handle = glyph.texture;
+
+        m4_scale(sprite.transform, 1.0f / 16.0f, 1.0f / 16.0f, 1.0f);
+
+        m4 translation;
+        printf("pen: %f\n", pen);
+        m4_translation(translation, pen, 0, 0);
+
+        m4_multiply(sprite.transform, translation);
+
+        BH_RenderBatch(renderer, sprite);
+
+        pen += (glyph.advance / 64.0) / 128.0f;
+        // pen += glyph.advance;
+    }
+}
+
 static void tick_all_entities(
     struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
     struct bh_renderer* renderer
@@ -119,6 +147,8 @@ static void tick_all_entities(
 #ifdef RENDER_DEBUG_INFO
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
+
+    render_text(renderer, "1234567890");
 
     BH_FinishBatch(renderer);
 
