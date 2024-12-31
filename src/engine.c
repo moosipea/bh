@@ -102,6 +102,7 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
         struct bh_glyph glyph = renderer->font.glyphs[ch];
         struct bh_sprite sprite;
         sprite.texture_handle = glyph.texture;
+        sprite.flags = BH_SPRITE_TEXT;
 
         m4_scale(sprite.transform, 1.0f / 16.0f, 1.0f / 16.0f, 1.0f);
 

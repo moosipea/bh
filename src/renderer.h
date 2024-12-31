@@ -32,6 +32,8 @@ struct bh_textures {
 GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size);
 void BH_DeinitTextures(struct bh_textures textures);
 
+enum bh_sprite_flag { BH_SPRITE_TEXT = 1 << 0 };
+
 struct bh_instance_data {
     m4 transform;
     GLuint flags;
