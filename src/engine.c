@@ -147,7 +147,9 @@ static void tick_all_entities(
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    render_text(renderer, "1234567890");
+    char fps_buffer[32];
+    sprintf(fps_buffer, "Fps: %d", (int)(1.0f / (state->dt == 0.0f ? 1.0f : state->dt)));
+    render_text(renderer, fps_buffer);
 
     BH_FinishBatch(renderer);
 

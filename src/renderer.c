@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "freetype/freetype.h"
 #include "freetype/ftimage.h"
+#include "matrix.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -375,19 +376,25 @@ static bool init_shaders(struct bh_renderer* renderer) {
 }
 
 static GLuint upload_glyph_texture(FT_Bitmap bitmap) {
+    GLint prior_alignment;
+    glGetIntegerv(GL_PACK_ALIGNMENT, &prior_alignment);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glTexImage2D(
         GL_TEXTURE_2D, 0, GL_RED, bitmap.width, bitmap.rows, 0, GL_RED, GL_UNSIGNED_BYTE,
         bitmap.buffer
     );
+
+    glPixelStorei(GL_PACK_ALIGNMENT, prior_alignment);
 
     return texture;
 }
