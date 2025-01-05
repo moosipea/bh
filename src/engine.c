@@ -95,22 +95,17 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
     float y0 = 100.0f;
     float scale = 1.0f;
 
-    // for (size_t i = 0; text[i] != '\0'; i++) {
-    for (unsigned char ch = 32; ch < 72; ch++) {
-        // unsigned char ch = text[i];
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        unsigned char ch = text[i];
         struct bh_glyph glyph = renderer->font.glyphs[ch];
 
-        // printf("'%c': w=%d, h=%d, advance=%d, bearing_x=%d, bearing_y=%d, texture=%d\n", ch,
-        // glyph.width, glyph.height, glyph.advance, glyph.bearing_x, glyph.bearing_y,
-        // glyph.texture);
-
         float x = x0 + glyph.bearing_x * scale;
-        float y = y0 - (glyph.height - glyph.bearing_y) * scale;
+        float y = y0 + (glyph.height - glyph.bearing_y) * scale;
 
         float w = glyph.width * scale;
         float h = glyph.height * scale;
 
-        if (glyph.width != 0) {
+        if (glyph.texture != 0) {
             struct bh_sprite sprite;
             sprite.texture_handle = glyph.texture;
             sprite.flags = BH_SPRITE_TEXT;
