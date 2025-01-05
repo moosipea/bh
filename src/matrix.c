@@ -32,23 +32,22 @@ void m4_scale(m4 matrix, float x, float y, float z) {
 
 void m4_rotation(m4 matrix, float x, float y, float z);
 
-// TODO
+// See:
+// https://github.com/recp/cglm/blob/054b2df0048e655b15bbf5621316c1baba20a66b/include/cglm/clipspace/ortho_lh_zo.h#L49
 void m4_ortho(m4 matrix, float left, float right, float top, float bottom, float near, float far) {
-    (void)left;
-    (void)top;
-    (void)near;
-    (void)far;
+    memset(matrix, 0, sizeof(m4));
 
-    m4_scale(matrix, bottom / right, 1.0, 1.0);
+    float rl = 1.0f / (right - left);
+    float tb = 1.0f / (top - bottom);
+    float fn = -1.0f / (far - near);
 
-    // m4_scale(matrix, 2.0f / (right - left), 2.0f / (top - bottom), 2.0f /
-    // (far - near));
-
-    // m4 translation;
-    // m4_translation(translation, -(left + right) / 2.0, -(top + bottom)
-    // / 2.0f, -(far + near) / 2.0f); translation[2][2] = -1.0f;
-
-    // m4_multiply(matrix, translation);
+    matrix[0][0] = 2.0f * rl;
+    matrix[1][1] = 2.0f * tb;
+    matrix[2][2] = -fn;
+    matrix[3][0] = -(right + left) * rl;
+    matrix[3][1] = -(top + bottom) * tb;
+    matrix[3][2] = near * fn;
+    matrix[3][3] = 1.0f;
 }
 
 void m4_multiply(m4 dest, m4 mat) {

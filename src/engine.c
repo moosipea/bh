@@ -91,29 +91,39 @@ static void render_qtree(struct bh_renderer* renderer, struct bh_qtree* qtree, G
 #endif
 
 static void render_text(struct bh_renderer* renderer, const char* text) {
-    float pen = 0.0f;
+    float x0 = 100.0f;
+    float y0 = 100.0f;
+    float scale = 1.0f;
 
-    for (size_t i = 0; text[i] != '\0'; i++) {
-        unsigned char ch = text[i];
-        if (ch >= 128) {
-            continue;
+    // for (size_t i = 0; text[i] != '\0'; i++) {
+    for (unsigned char ch = 32; ch < 72; ch++) {
+        // unsigned char ch = text[i];
+        struct bh_glyph glyph = renderer->font.glyphs[ch];
+
+        // printf("'%c': w=%d, h=%d, advance=%d, bearing_x=%d, bearing_y=%d, texture=%d\n", ch,
+        // glyph.width, glyph.height, glyph.advance, glyph.bearing_x, glyph.bearing_y,
+        // glyph.texture);
+
+        float x = x0 + glyph.bearing_x * scale;
+        float y = y0 - (glyph.height - glyph.bearing_y) * scale;
+
+        float w = glyph.width * scale;
+        float h = glyph.height * scale;
+
+        if (glyph.width != 0) {
+            struct bh_sprite sprite;
+            sprite.texture_handle = glyph.texture;
+            sprite.flags = BH_SPRITE_TEXT;
+
+            m4 translation;
+            m4_translation(translation, x, y, 0.0f);
+            m4_scale(sprite.transform, w / 2.0, h / 2.0, 1.0f);
+            m4_multiply(sprite.transform, translation);
+
+            BH_RenderBatch(renderer, sprite);
         }
 
-        struct bh_glyph glyph = renderer->font.glyphs[ch];
-        struct bh_sprite sprite;
-        sprite.texture_handle = glyph.texture;
-        sprite.flags = BH_SPRITE_TEXT;
-
-        m4_scale(sprite.transform, 1.0f / 16.0f, 1.0f / 16.0f, 1.0f);
-
-        m4 translation;
-        m4_translation(translation, pen, 0, 0);
-
-        m4_multiply(sprite.transform, translation);
-
-        BH_RenderBatch(renderer, sprite);
-
-        pen += (glyph.advance / 64.0) / 128.0f;
+        x0 += (glyph.advance >> 6) * scale;
     }
 }
 
@@ -147,9 +157,7 @@ static void tick_all_entities(
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    char fps_buffer[32];
-    sprintf(fps_buffer, "Fps: %d", (int)(1.0f / (state->dt == 0.0f ? 1.0f : state->dt)));
-    render_text(renderer, fps_buffer);
+    render_text(renderer, "The quick brown fox jumps over the lazy dog.");
 
     BH_FinishBatch(renderer);
 
@@ -203,8 +211,8 @@ bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
 #endif
 
     ctx->entity_qtree.bb = (struct bh_bounding_box){
-        .top_left = { -1.0f,  1.0f },
-        .bottom_right = {  1.0f, -1.0f },
+        .top_left = {   0.0f,   0.0f },
+        .bottom_right = { 640.0f, 480.0f },
     };
 
     ctx->user_state = user_state;

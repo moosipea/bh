@@ -10,7 +10,7 @@
 #include "entitydef.h"
 #include "matrix.h"
 
-#define BH_MAX_TEXTURES 256
+#define BH_MAX_TEXTURES 512
 #define BH_BATCH_SIZE 1024
 
 GLuint BH_InitProgram(const GLchar* vertex_src, const GLchar* fragment_src);

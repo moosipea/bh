@@ -12,14 +12,13 @@
 
 #define TEST_SPRITES 16
 
-static float uniform_rand(void) { return 2.0f * ((float)rand() / (float)RAND_MAX) - 1.0f; }
+static float uniform_rand(void) { return (float)rand() / (float)RAND_MAX; }
 
 static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
-    (void)ctx;
-    entity->position.y -= 1.0f / 120.0f;
-    if (entity->position.y <= -1.0f) {
-        entity->position.x = uniform_rand();
-        entity->position.y = 1.0f;
+    entity->position.y += 256.0f * ctx->dt;
+    if (entity->position.y >= ctx->renderer.height) {
+        entity->position.x = uniform_rand() * ctx->renderer.width;
+        entity->position.y = 0.0f;
     }
 }
 
@@ -35,11 +34,11 @@ static void spawn_test_entities(struct bh_ctx* ctx) {
         // clang-format off
         struct bh_sprite_entity entity = {
             .sprite = sprite,
-            .position = { uniform_rand(), uniform_rand() },
-            .scale = { 0.05f, 0.05f },
+            .position = { ctx->renderer.width * uniform_rand(), ctx->renderer.height * uniform_rand() },
+            .scale = { 32.0f, 32.0f },
             .bb = {
-                { -0.05f, 0.05f },
-                { 0.05f, -0.05f },
+                { -12.0f, 12.0f },
+                { 12.0f, -12.0f },
             },
             .callback = test_entity_system,
         };
@@ -88,16 +87,16 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
     }
 
     if (BH_GetKey(GLFW_KEY_W)) {
-        player->position.y += 1.0f * ctx->dt;
+        player->position.y -= 128.0f * ctx->dt;
     }
     if (BH_GetKey(GLFW_KEY_S)) {
-        player->position.y -= 1.0f * ctx->dt;
+        player->position.y += 128.0f * ctx->dt;
     }
     if (BH_GetKey(GLFW_KEY_A)) {
-        player->position.x -= 1.0f * ctx->dt;
+        player->position.x -= 128.0f * ctx->dt;
     }
     if (BH_GetKey(GLFW_KEY_D)) {
-        player->position.x += 1.0f * ctx->dt;
+        player->position.x += 128.0f * ctx->dt;
     }
 }
 
@@ -109,11 +108,11 @@ static void spawn_player_entity(struct bh_ctx* ctx) {
     // clang-format off
     struct bh_sprite_entity entity = {
         .sprite = sprite,
-        .position = { -0.5f, -0.5f },
-        .scale = { 0.15f, 0.15f },
+        .position = { ctx->renderer.width / 2.0f, ctx->renderer.height / 2.0f },
+        .scale = { 64.0f, 64.0f },
         .bb = {
-            { -0.075f, 0.075f },
-            { 0.075f, -0.075f },
+            { -32.0f, 32.0f },
+            { 32.0f, -32.0f },
         },
         .type = BH_PLAYER,
         .callback = update_player_system,

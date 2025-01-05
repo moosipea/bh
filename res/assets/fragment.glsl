@@ -16,7 +16,7 @@ void main() {
     vec2 uvs = vec2(fUVs.x, 1.0 - fUVs.y);
     vec4 sampled = texture(sprite_textures[fInstance], uvs);
 
-    vec4 color = mix(sampled, vec4(sampled.r), fFlags & 1);
+    vec4 color = mix(sampled, vec4(sampled.r, sampled.r, sampled.r, 1.0), fFlags & 1);
 
     FragColor = color;
 }
