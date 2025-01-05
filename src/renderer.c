@@ -1,8 +1,6 @@
 #include "renderer.h"
-#include "freetype/fttypes.h"
 #include "matrix.h"
 
-#include <cstdio>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -407,93 +405,28 @@ static GLuint upload_glyph_texture(FT_Bitmap bitmap) {
     return texture;
 }
 
-// Todo: write all glyphs to texture atlas
-// Use that as a texture
-// Generate new mesh with UVs for text rendering
-// Because: non-power-of-two textures are fucking everything up
-
-static size_t ceil_power_of_two(size_t n) {
-    size_t m = 1;
-    while (n < m) {
-        m *= 2;
-    }
-    return m;
-}
-
-struct glyph_atlas {
-    void* pixels;
-    size_t width, height;
-    size_t width_used;
-};
-
-/* Note: this should be a power of two */
-#define GLYPH_ATLAS_INITIAL_WIDTH 64
-
-/* Note: this should be a power of two */
-#define GLYPH_ATLAS_GROWTH 2
-
-static void init_glyph_atlas(struct glyph_atlas* atlas, size_t max_height) {
-    atlas->width = GLYPH_ATLAS_INITIAL_WIDTH;
-    atlas->height = ceil_power_of_two(max_height);
-    atlas->pixels = calloc(atlas->width * atlas->height, sizeof(FT_Byte));
-}
-
-static void glyph_atlas_grow(struct glyph_atlas* atlas) {
-    atlas->width *= GLYPH_ATLAS_GROWTH;
-    atlas->pixels = realloc(atlas->pixels, atlas->width * atlas->height * sizeof(FT_Byte));
-}
-
-/* This is more complicated */
-// static void glyph_atlas_blit(struct glyph_atlas *atlas, void* pixels, size_t width, size_t
-// height) {
-//     if (height >= atlas->height) {
-//         error("Glyph does not fit into atlas: %llu >= %llu", height, atlas->height);
-//         return;
-//     }
-//
-//     if (atlas->width_used + width >= atlas->width) {
-//         glyph_atlas_grow(atlas);
-//     }
-//
-//     for (size_t y = 0; y < height; y++) {
-//         for (size_t x = 0; x < width; x++) {
-//             size_t pixels_x = atlas->width_used + x;
-//             size_t pixels_index =
-//         }
-//     }
-// }
-
 static void preload_glyphs(struct bh_font* font, FT_Face face) {
-    // GLint prior_alignment;
-    // glGetIntegerv(GL_PACK_ALIGNMENT, &prior_alignment);
-    // glPixelStorei(GL_PACK_ALIGNMENT, 1);
-
-    struct glyph_atlas atlas = { 0 };
-    init_glyph_atlas(&atlas, face->height);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     for (unsigned char ch = 0; ch < MAX_CHARACTER; ch++) {
         if (FT_Load_Char(face, ch, FT_LOAD_RENDER)) {
             continue;
         }
 
-        // GLuint64 handle = 0;
+        GLuint64 handle = 0;
 
-        // if (face->glyph->bitmap.width != 0) {
-        //     GLuint texture = upload_glyph_texture(face->glyph->bitmap);
-        //     handle = append_new_texture_handle(&font->textures, texture);
-        // }
+        if (face->glyph->bitmap.width != 0) {
+            GLuint texture = upload_glyph_texture(face->glyph->bitmap);
+            handle = append_new_texture_handle(&font->textures, texture);
+        }
 
-        // font->glyphs[ch] = (struct bh_glyph){ .texture = handle,
-        //                                      .width = face->glyph->bitmap.width,
-        //                                      .height = face->glyph->bitmap.rows,
-        //                                      .bearing_x = face->glyph->bitmap_left,
-        //                                      .bearing_y = face->glyph->bitmap_top,
-        //                                      .advance = face->glyph->advance.x };
+        font->glyphs[ch] = (struct bh_glyph){ .texture = handle,
+                                              .width = face->glyph->bitmap.width,
+                                              .height = face->glyph->bitmap.rows,
+                                              .bearing_x = face->glyph->bitmap_left,
+                                              .bearing_y = face->glyph->bitmap_top,
+                                              .advance = face->glyph->advance.x };
     }
-
-    free(atlas.pixels);
-
-    // glPixelStorei(GL_PACK_ALIGNMENT, prior_alignment);
 }
 
 static bool
