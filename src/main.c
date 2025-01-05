@@ -37,8 +37,8 @@ static void spawn_test_entities(struct bh_ctx* ctx) {
             .position = { ctx->renderer.width * uniform_rand(), ctx->renderer.height * uniform_rand() },
             .scale = { 32.0f, 32.0f },
             .bb = {
-                { -12.0f, 12.0f },
-                { 12.0f, -12.0f },
+                { -12.0f, -12.0f },
+                { 12.0f, 12.0f },
             },
             .callback = test_entity_system,
         };
@@ -111,8 +111,8 @@ static void spawn_player_entity(struct bh_ctx* ctx) {
         .position = { ctx->renderer.width / 2.0f, ctx->renderer.height / 2.0f },
         .scale = { 64.0f, 64.0f },
         .bb = {
-            { -32.0f, 32.0f },
-            { 32.0f, -32.0f },
+            { -32.0f, -32.0f },
+            { 32.0f, 32.0f },
         },
         .type = BH_PLAYER,
         .callback = update_player_system,

@@ -7,12 +7,12 @@
 
 bool BH_IsPointInBox(struct bh_bounding_box box, struct vec2 point) {
     return point.x >= box.top_left.x && point.x <= box.bottom_right.x &&
-           point.y <= box.top_left.y && point.y >= box.bottom_right.y;
+           point.y >= box.top_left.y && point.y <= box.bottom_right.y;
 }
 
 bool BH_DoBoxesIntersect(struct bh_bounding_box box, struct bh_bounding_box other) {
     return box.top_left.x <= other.bottom_right.x && box.bottom_right.x >= other.top_left.x &&
-           box.top_left.y >= other.bottom_right.y && box.bottom_right.y <= other.top_left.y;
+           box.top_left.y <= other.bottom_right.y && box.bottom_right.y >= other.top_left.y;
 }
 
 struct vec2 BH_BoxCentre(struct bh_bounding_box bb) {
