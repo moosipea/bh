@@ -100,7 +100,7 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
         struct bh_glyph glyph = renderer->font.glyphs[ch];
 
         float x = x0 + glyph.bearing_x * scale;
-        float y = y0 + (glyph.height - glyph.bearing_y) * scale;
+        float y = y0 - (glyph.bearing_y - 0.5f * glyph.height) * scale;
 
         float w = glyph.width * scale;
         float h = glyph.height * scale;
