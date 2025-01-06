@@ -72,7 +72,6 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
         }
 
         if (BH_DoEntitiesCollide(player, entity) && state->immunity <= 0.01f) {
-            printf("Collision!\n");
             state->immunity = 0.33f;
             break;
         }
@@ -130,8 +129,8 @@ static void spawn_player_entity(struct bh_ctx* ctx) {
 bool user_init(struct bh_ctx* ctx, void* state) {
     (void)state;
 
-    spawn_test_entities(ctx);
-    spawn_player_entity(ctx);
+    // spawn_test_entities(ctx);
+    // spawn_player_entity(ctx);
 
     return true;
 }

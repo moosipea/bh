@@ -13,7 +13,7 @@
 #include "error_macro.h"
 #include "renderer.h"
 
-#define RENDER_DEBUG_INFO
+// #define RENDER_DEBUG_INFO
 
 void BH_SpawnEntity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
     if (entities->entities == NULL) {
@@ -99,7 +99,7 @@ static void render_text(struct bh_renderer* renderer, const char* text) {
         unsigned char ch = text[i];
         struct bh_glyph glyph = renderer->font.glyphs[ch];
 
-        float x = x0 + glyph.bearing_x * scale;
+        float x = x0 + (glyph.bearing_x + 0.5f * glyph.width) * scale;
         float y = y0 - (glyph.bearing_y - 0.5f * glyph.height) * scale;
 
         float w = glyph.width * scale;
@@ -152,7 +152,8 @@ static void tick_all_entities(
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    render_text(renderer, "The quick brown fox jumps over the lazy dog.");
+    // render_text(renderer, "The quick brown fox jumps over the lazy dog.");
+    render_text(renderer, "This is sample text");
 
     BH_FinishBatch(renderer);
 
