@@ -14,7 +14,7 @@
 
 static float uniform_rand(void) { return (float)rand() / (float)RAND_MAX; }
 
-static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* entity) {
+static void test_entity_system(struct BH_Context* ctx, struct BH_SpriteEntity* entity) {
     entity->position.y += 256.0f * ctx->dt;
     if (entity->position.y >= ctx->renderer.height) {
         entity->position.x = uniform_rand() * ctx->renderer.width;
@@ -22,17 +22,17 @@ static void test_entity_system(struct bh_ctx* ctx, struct bh_sprite_entity* enti
     }
 }
 
-static void spawn_test_entities(struct bh_ctx* ctx) {
+static void spawn_test_entities(struct BH_Context* ctx) {
     GLuint64 star_texture =
         BH_LoadTexture(&ctx->renderer.textures, (void*)ASSET_star, sizeof(ASSET_star) - 1);
     for (size_t i = 0; i < TEST_SPRITES; i++) {
 
-        struct bh_sprite sprite = { 0 };
+        struct BH_Sprite sprite = { 0 };
         sprite.texture_handle = star_texture;
         m4_identity(sprite.transform);
 
         // clang-format off
-        struct bh_sprite_entity entity = {
+        struct BH_SpriteEntity entity = {
             .sprite = sprite,
             .position = { ctx->renderer.width * uniform_rand(), ctx->renderer.height * uniform_rand() },
             .scale = { 32.0f, 32.0f },
@@ -48,8 +48,8 @@ static void spawn_test_entities(struct bh_ctx* ctx) {
     }
 }
 
-static struct bh_bounding_box expand_bb(struct bh_bounding_box bb, float by) {
-    return (struct bh_bounding_box){
+static struct BH_BB expand_bb(struct BH_BB bb, float by) {
+    return (struct BH_BB){
         .top_left = {     bb.top_left.x - by,     bb.top_left.y + by },
         .bottom_right = { bb.bottom_right.x + by, bb.bottom_right.y - by }
     };
@@ -59,13 +59,13 @@ struct player_state {
     float immunity;
 };
 
-static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* player) {
-    struct bh_bounding_box bb = BH_BoxToWorld(player->position, expand_bb(player->bb, 0.15f));
-    struct bh_qtree_query collision_query = BH_QueryQTree(&ctx->entity_qtree, bb);
+static void update_player_system(struct BH_Context* ctx, struct BH_SpriteEntity* player) {
+    struct BH_BB bb = BH_BoxToWorld(player->position, expand_bb(player->bb, 0.15f));
+    struct BH_QTreeQuery collision_query = BH_QueryQTree(&ctx->entity_qtree, bb);
 
     struct player_state* state = player->state;
     for (size_t i = 0; i < collision_query.count; i++) {
-        struct bh_sprite_entity* entity = collision_query.entities[i]->entity;
+        struct BH_SpriteEntity* entity = collision_query.entities[i]->entity;
 
         if (entity->type == BH_PLAYER) {
             continue;
@@ -99,13 +99,13 @@ static void update_player_system(struct bh_ctx* ctx, struct bh_sprite_entity* pl
     }
 }
 
-static void spawn_player_entity(struct bh_ctx* ctx) {
-    struct bh_sprite sprite = { 0 };
+static void spawn_player_entity(struct BH_Context* ctx) {
+    struct BH_Sprite sprite = { 0 };
     sprite.texture_handle =
         BH_LoadTexture(&ctx->renderer.textures, (void*)ASSET_player, sizeof(ASSET_player) - 1);
 
     // clang-format off
-    struct bh_sprite_entity entity = {
+    struct BH_SpriteEntity entity = {
         .sprite = sprite,
         .position = { ctx->renderer.width / 2.0f, ctx->renderer.height / 2.0f },
         .scale = { 64.0f, 64.0f },
@@ -126,7 +126,7 @@ static void spawn_player_entity(struct bh_ctx* ctx) {
     BH_SpawnEntity(&ctx->entities, entity);
 }
 
-bool user_init(struct bh_ctx* ctx, void* state) {
+bool user_init(struct BH_Context* ctx, void* state) {
     (void)state;
 
     // spawn_test_entities(ctx);
@@ -136,7 +136,7 @@ bool user_init(struct bh_ctx* ctx, void* state) {
 }
 
 int main(void) {
-    struct bh_ctx ctx = { 0 };
+    struct BH_Context ctx = { 0 };
 
     if (!BH_InitContext(&ctx, NULL, user_init)) {
         error("Context initialisation failed");

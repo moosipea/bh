@@ -84,8 +84,8 @@ GLuint BH_InitProgram(const GLchar* vertex_src, const GLchar* fragment_src) {
 
 void BH_DeinitProgram(GLuint program) { glDeleteProgram(program); }
 
-struct bh_mesh_handle BH_UploadMesh(const GLfloat* vertices, size_t count) {
-    struct bh_mesh_handle res = { 0 };
+struct BH_MeshHandle BH_UploadMesh(const GLfloat* vertices, size_t count) {
+    struct BH_MeshHandle res = { 0 };
 
     glGenVertexArrays(1, &res.vao_handle);
     glBindVertexArray(res.vao_handle);
@@ -190,7 +190,7 @@ static GLuint CreateTexture(void* png_data, size_t size) {
     return texture;
 }
 
-static GLuint64 AppendTextureHandle(struct bh_textures* textures, GLuint texture) {
+static GLuint64 AppendTextureHandle(struct BH_Textures* textures, GLuint texture) {
     if (!texture) {
         error("texture == 0");
         return 0;
@@ -216,7 +216,7 @@ static GLuint64 AppendTextureHandle(struct bh_textures* textures, GLuint texture
     return texture_handle;
 }
 
-GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t size) {
+GLuint64 BH_LoadTexture(struct BH_Textures* textures, void* png_data, size_t size) {
     GLuint texture = CreateTexture(png_data, size);
     if (!texture) {
         error("Couldn't create texture");
@@ -231,7 +231,7 @@ GLuint64 BH_LoadTexture(struct bh_textures* textures, void* png_data, size_t siz
     return texture_handle;
 }
 
-void BH_DeinitTextures(struct bh_textures textures) {
+void BH_DeinitTextures(struct BH_Textures textures) {
     for (size_t i = 0; i < textures.count; i++) {
         glMakeTextureHandleNonResidentARB(textures.texture_handles[i]);
     }
@@ -247,8 +247,8 @@ static GLuint CreateSSBO(const void* buffer, size_t size) {
     return id;
 }
 
-struct bh_sprite_batch BH_InitBatch(void) {
-    struct bh_sprite_batch res = { 0 };
+struct BH_SpriteBatch BH_InitBatch(void) {
+    struct BH_SpriteBatch res = { 0 };
 
     /* For use with GL_TRIANGLE_FAN */
     /* Positions and UV coords */
@@ -269,13 +269,13 @@ struct bh_sprite_batch BH_InitBatch(void) {
     return res;
 }
 
-void BH_DeinitBatch(struct bh_sprite_batch batch) {
+void BH_DeinitBatch(struct BH_SpriteBatch batch) {
     glDeleteBuffers(1, &batch.textures_ssbo);
     glDeleteBuffers(1, &batch.instances_ssbo);
 }
 
-void BH_RenderBatch(struct bh_renderer* renderer, struct bh_sprite sprite) {
-    struct bh_sprite_batch* batch = &renderer->batch;
+void BH_RenderBatch(struct BH_Renderer* renderer, struct BH_Sprite sprite) {
+    struct BH_SpriteBatch* batch = &renderer->batch;
     /* Insert sprite data into batch array */
     memcpy(batch->instance_data[batch->count].transform, sprite.transform, sizeof(m4));
     batch->instance_data[batch->count].flags = sprite.flags;
@@ -288,7 +288,7 @@ void BH_RenderBatch(struct bh_renderer* renderer, struct bh_sprite sprite) {
     }
 }
 
-static void BatchDrawcall(struct bh_renderer* renderer) {
+static void BatchDrawcall(struct BH_Renderer* renderer) {
     glUseProgram(renderer->program);
     glBindVertexArray(renderer->batch.mesh.vao_handle);
     glEnableVertexAttribArray(0);
@@ -301,11 +301,11 @@ static void BatchDrawcall(struct bh_renderer* renderer) {
     glUseProgram(0);
 }
 
-void BH_FinishBatch(struct bh_renderer* renderer) {
-    struct bh_sprite_batch* batch = &renderer->batch;
+void BH_FinishBatch(struct BH_Renderer* renderer) {
+    struct BH_SpriteBatch* batch = &renderer->batch;
     /* Sync SSBO contents */
     glNamedBufferSubData(
-        batch->instances_ssbo, 0, batch->count * sizeof(struct bh_instance_data),
+        batch->instances_ssbo, 0, batch->count * sizeof(struct BH_InstanceData),
         batch->instance_data
     );
     glNamedBufferSubData(
@@ -323,7 +323,7 @@ void BH_FinishBatch(struct bh_renderer* renderer) {
     batch->count = 0;
 }
 
-static bool InitGLFW(struct bh_renderer* renderer) {
+static bool InitGLFW(struct BH_Renderer* renderer) {
     if (!glfwInit()) {
         error("GLFW initialization failed");
         return false;
@@ -354,7 +354,7 @@ static void GLAPIENTRY GLErrorCB(
 }
 #endif
 
-static bool InitGL(struct bh_renderer* renderer) {
+static bool InitGL(struct BH_Renderer* renderer) {
     if (!InitGLFW(renderer)) {
         return false;
     }
@@ -376,7 +376,7 @@ static bool InitGL(struct bh_renderer* renderer) {
     return true;
 }
 
-static bool InitShaders(struct bh_renderer* renderer) {
+static bool InitShaders(struct BH_Renderer* renderer) {
     renderer->program = BH_InitProgram((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
     if (renderer->program) {
         glUseProgram(renderer->program);
@@ -405,7 +405,7 @@ static GLuint UploadGlyphTexture(FT_Bitmap bitmap) {
     return texture;
 }
 
-static void PreloadGlyphs(struct bh_font* font, FT_Face face) {
+static void PreloadGlyphs(struct BH_Font* font, FT_Face face) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     for (unsigned char ch = 0; ch < MAX_CHARACTER; ch++) {
@@ -420,7 +420,7 @@ static void PreloadGlyphs(struct bh_font* font, FT_Face face) {
             handle = AppendTextureHandle(&font->textures, texture);
         }
 
-        font->glyphs[ch] = (struct bh_glyph){ .texture = handle,
+        font->glyphs[ch] = (struct BH_Glyph){ .texture = handle,
                                               .width = face->glyph->bitmap.width,
                                               .height = face->glyph->bitmap.rows,
                                               .bearing_x = face->glyph->bitmap_left,
@@ -430,7 +430,7 @@ static void PreloadGlyphs(struct bh_font* font, FT_Face face) {
 }
 
 static bool
-InitFont(FT_Library ft, struct bh_font* font, size_t font_size, void* data, size_t size) {
+InitFont(FT_Library ft, struct BH_Font* font, size_t font_size, void* data, size_t size) {
     FT_Face face;
 
     if (FT_New_Memory_Face(ft, data, size, 0, &face)) {
@@ -450,9 +450,9 @@ InitFont(FT_Library ft, struct bh_font* font, size_t font_size, void* data, size
     return true;
 }
 
-static void DeinitFont(struct bh_font font) { BH_DeinitTextures(font.textures); }
+static void DeinitFont(struct BH_Font font) { BH_DeinitTextures(font.textures); }
 
-static bool InitFreeType(struct bh_renderer* renderer) {
+static bool InitFreeType(struct BH_Renderer* renderer) {
     if (FT_Init_FreeType(&renderer->ft)) {
         error("FreeType initialisation failed");
         return false;
@@ -462,7 +462,7 @@ static bool InitFreeType(struct bh_renderer* renderer) {
 
 static void DeinitFreeType(FT_Library ft) { FT_Done_FreeType(ft); }
 
-static void UpdateProjectionMatrix(struct bh_renderer* renderer) {
+static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
     m4_scale(renderer->projection_matrix, 1.0f, 1.0f, 1.0f);
 
     m4 projection;
@@ -475,7 +475,7 @@ static void UpdateProjectionMatrix(struct bh_renderer* renderer) {
     );
 }
 
-bool BH_InitRenderer(struct bh_renderer* renderer) {
+bool BH_InitRenderer(struct BH_Renderer* renderer) {
     renderer->width = 640;
     renderer->height = 480;
 
@@ -495,11 +495,11 @@ bool BH_InitRenderer(struct bh_renderer* renderer) {
 }
 
 void BH_RenderText(
-    struct bh_renderer* renderer, float x0, float y0, float scale, const char* text
+    struct BH_Renderer* renderer, float x0, float y0, float scale, const char* text
 ) {
     for (size_t i = 0; text[i] != '\0'; i++) {
         unsigned char ch = text[i];
-        struct bh_glyph glyph = renderer->font.glyphs[ch];
+        struct BH_Glyph glyph = renderer->font.glyphs[ch];
 
         float x = x0 + (glyph.bearing_x + 0.5f * glyph.width) * scale;
 
@@ -512,7 +512,7 @@ void BH_RenderText(
         float h = glyph.height * scale;
 
         if (glyph.texture != 0) {
-            struct bh_sprite sprite;
+            struct BH_Sprite sprite;
             sprite.texture_handle = glyph.texture;
             sprite.flags = BH_SPRITE_TEXT;
 
@@ -528,7 +528,7 @@ void BH_RenderText(
     }
 }
 
-void BH_RendererBeginFrame(struct bh_renderer* renderer) {
+void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
     int width, height;
     glfwGetFramebufferSize(renderer->window, &width, &height);
 
@@ -543,9 +543,9 @@ void BH_RendererBeginFrame(struct bh_renderer* renderer) {
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void BH_RendererEndFrame(struct bh_renderer* renderer) { glfwSwapBuffers(renderer->window); }
+void BH_RendererEndFrame(struct BH_Renderer* renderer) { glfwSwapBuffers(renderer->window); }
 
-void BH_DeinitRenderer(struct bh_renderer* renderer) {
+void BH_DeinitRenderer(struct BH_Renderer* renderer) {
     DeinitFont(renderer->font);
     DeinitFreeType(renderer->ft);
 

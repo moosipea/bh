@@ -15,22 +15,22 @@
 
 #define RENDER_DEBUG_INFO
 
-void BH_SpawnEntity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
+void BH_SpawnEntity(struct BH_DELL* entities, struct BH_SpriteEntity entity) {
     if (entities->entities == NULL) {
-        entities->entities = calloc(1, sizeof(struct bh_entity_ll));
+        entities->entities = calloc(1, sizeof(struct BH_EntityLL));
     }
 
     if (entities->last == NULL) {
         entities->entities->entity = entity;
         entities->last = entities->entities;
     } else {
-        entities->last->next = calloc(1, sizeof(struct bh_entity_ll));
+        entities->last->next = calloc(1, sizeof(struct BH_EntityLL));
         entities->last->next->entity = entity;
         entities->last = entities->last->next;
     }
 }
 
-void BH_DeinitEntities(struct bh_entity_ll* entities) {
+void BH_DeinitEntities(struct BH_EntityLL* entities) {
     if (entities->next != NULL) {
         BH_DeinitEntities(entities->next);
     }
@@ -40,7 +40,7 @@ void BH_DeinitEntities(struct bh_entity_ll* entities) {
     free(entities);
 }
 
-static void UpdateEntityTransform(struct bh_sprite_entity* entity) {
+static void UpdateEntityTransform(struct BH_SpriteEntity* entity) {
     m4 model_matrix;
     m4 translation;
 
@@ -52,14 +52,13 @@ static void UpdateEntityTransform(struct bh_sprite_entity* entity) {
 }
 
 #ifdef RENDER_DEBUG_INFO
-static void RenderBB(
-    struct bh_renderer* renderer, struct bh_bounding_box bb, struct vec2 offset, GLuint64 texture
-) {
-    struct bh_sprite hitbox_sprite = {
+static void
+RenderBB(struct BH_Renderer* renderer, struct BH_BB bb, struct vec2 offset, GLuint64 texture) {
+    struct BH_Sprite hitbox_sprite = {
         .texture_handle = texture,
     };
 
-    struct bh_bounding_box globalised_bb = BH_BoxToWorld(offset, bb);
+    struct BH_BB globalised_bb = BH_BoxToWorld(offset, bb);
     struct vec2 hitbox_centre = BH_BoxCentre(globalised_bb);
     struct vec2 hitbox_dimensions = BH_BoxDimensions(globalised_bb);
 
@@ -74,7 +73,7 @@ static void RenderBB(
 #endif
 
 #ifdef RENDER_DEBUG_INFO
-static void RenderQTree(struct bh_renderer* renderer, struct bh_qtree* qtree, GLuint64 texture) {
+static void RenderQTree(struct BH_Renderer* renderer, struct BH_QTree* qtree, GLuint64 texture) {
     if (qtree == NULL) {
         return;
     }
@@ -91,18 +90,18 @@ static void RenderQTree(struct bh_renderer* renderer, struct bh_qtree* qtree, GL
 #endif
 
 static void TickEntities(
-    struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
-    struct bh_renderer* renderer
+    struct BH_Context* state, struct BH_EntityLL* entities, struct BH_QTree* qtree,
+    struct BH_Renderer* renderer
 ) {
-    struct bh_qtree next_qtree = { .bb = qtree->bb };
+    struct BH_QTree next_qtree = { .bb = qtree->bb };
 
-    struct bh_entity_ll* node = entities;
+    struct BH_EntityLL* node = entities;
 
     while (node != NULL) {
-        struct bh_sprite_entity* entity = &node->entity;
+        struct BH_SpriteEntity* entity = &node->entity;
 
         BH_InsertQTree(
-            &next_qtree, (struct bh_qtree_entity){ .entity = entity, .point = entity->position }
+            &next_qtree, (struct BH_QTreeEntity){ .entity = entity, .point = entity->position }
         );
 
         entity->callback(state, entity);
@@ -129,7 +128,7 @@ static void TickEntities(
     *qtree = next_qtree;
 }
 
-bool BH_DoEntitiesCollide(struct bh_sprite_entity* entity, struct bh_sprite_entity* other) {
+bool BH_DoEntitiesCollide(struct BH_SpriteEntity* entity, struct BH_SpriteEntity* other) {
     return BH_DoBoxesIntersect(
         BH_BoxToWorld(entity->position, entity->bb), BH_BoxToWorld(other->position, other->bb)
     );
@@ -156,7 +155,7 @@ bool BH_GetKey(int glfw_key) {
     return GLOBAL_KEYS_HELD[glfw_key];
 }
 
-bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
+bool BH_InitContext(struct BH_Context* ctx, void* user_state, BH_UserCB user_init) {
     if (!BH_InitRenderer(&ctx->renderer))
         return false;
     glfwSetKeyCallback(ctx->renderer.window, GLFWKeyCB);
@@ -173,7 +172,7 @@ bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
         return false;
 #endif
 
-    ctx->entity_qtree.bb = (struct bh_bounding_box){
+    ctx->entity_qtree.bb = (struct BH_BB){
         .top_left = {   0.0f,   0.0f },
         .bottom_right = { 640.0f, 480.0f },
     };
@@ -185,24 +184,24 @@ bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
     return true;
 }
 
-static void BeginFrame(struct bh_ctx* ctx) {
+static void BeginFrame(struct BH_Context* ctx) {
     glfwSetTime(0.0);
     glfwPollEvents();
     BH_RendererBeginFrame(&ctx->renderer);
 }
 
-static void EndFrame(struct bh_ctx* ctx) {
+static void EndFrame(struct BH_Context* ctx) {
     BH_RendererEndFrame(&ctx->renderer);
     ctx->dt = (float)glfwGetTime();
 }
 
-static void DeinitContext(struct bh_ctx* ctx) {
+static void DeinitContext(struct BH_Context* ctx) {
     BH_DeinitQTree(&ctx->entity_qtree);
     BH_DeinitEntities(ctx->entities.entities);
     BH_DeinitRenderer(&ctx->renderer);
 }
 
-void BH_RunContext(struct bh_ctx* ctx) {
+void BH_RunContext(struct BH_Context* ctx) {
     while (!glfwWindowShouldClose(ctx->renderer.window)) {
         BeginFrame(ctx);
         TickEntities(ctx, ctx->entities.entities, &ctx->entity_qtree, &ctx->renderer);

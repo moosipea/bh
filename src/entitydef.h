@@ -3,34 +3,34 @@
 #include "matrix.h"
 #include <stdbool.h>
 
-struct bh_ctx;
-struct bh_sprite_entity;
-typedef void (*bh_sprite_entity_cb)(struct bh_ctx* state, struct bh_sprite_entity* entity);
+struct BH_Context;
+struct BH_SpriteEntity;
+typedef void (*BH_SpriteEntityCB)(struct BH_Context* state, struct BH_SpriteEntity* entity);
 
-struct bh_sprite {
+struct BH_Sprite {
     m4 transform;
     GLuint64 texture_handle;
     GLuint flags;
 };
 
-struct bh_bounding_box {
+struct BH_BB {
     struct vec2 top_left;
     struct vec2 bottom_right;
 };
 
-enum bh_entity_type {
+enum BH_EntityType {
     BH_BULLET = 0,
     BH_PLAYER,
 };
 
-struct bh_sprite_entity {
-    struct bh_sprite sprite;
+struct BH_SpriteEntity {
+    struct BH_Sprite sprite;
     struct vec2 position;
     struct vec2 scale;
     float rotation;
-    struct bh_bounding_box bb;
+    struct BH_BB bb;
 
-    enum bh_entity_type type;
-    bh_sprite_entity_cb callback;
+    enum BH_EntityType type;
+    BH_SpriteEntityCB callback;
     void* state;
 };

@@ -6,39 +6,39 @@
 
 #define QT_MAX_ELEMENTS 4
 
-bool BH_IsPointInBox(struct bh_bounding_box box, struct vec2 point);
-bool BH_DoBoxesIntersect(struct bh_bounding_box box, struct bh_bounding_box other);
+bool BH_IsPointInBox(struct BH_BB box, struct vec2 point);
+bool BH_DoBoxesIntersect(struct BH_BB box, struct BH_BB other);
 
-struct bh_qtree_entity {
+struct BH_QTreeEntity {
     struct vec2 point;
-    struct bh_sprite_entity* entity;
+    struct BH_SpriteEntity* entity;
 };
 
-struct bh_qtree {
-    struct bh_qtree_entity elements[QT_MAX_ELEMENTS];
+struct BH_QTree {
+    struct BH_QTreeEntity elements[QT_MAX_ELEMENTS];
     size_t element_count;
 
-    struct bh_bounding_box bb;
+    struct BH_BB bb;
 
-    struct bh_qtree* top_left;
-    struct bh_qtree* top_right;
-    struct bh_qtree* bottom_left;
-    struct bh_qtree* bottom_right;
+    struct BH_QTree* top_left;
+    struct BH_QTree* top_right;
+    struct BH_QTree* bottom_left;
+    struct BH_QTree* bottom_right;
 };
 
-bool BH_InsertQTree(struct bh_qtree* qtree, struct bh_qtree_entity point);
-struct bh_qtree_query BH_QueryQTree(struct bh_qtree* qtree, struct bh_bounding_box box);
-void BH_DeinitQTree(struct bh_qtree* qtree);
-bool BH_IsQTreeLeaf(struct bh_qtree* qtree);
+bool BH_InsertQTree(struct BH_QTree* qtree, struct BH_QTreeEntity point);
+struct BH_QTreeQuery BH_QueryQTree(struct BH_QTree* qtree, struct BH_BB box);
+void BH_DeinitQTree(struct BH_QTree* qtree);
+bool BH_IsQTreeLeaf(struct BH_QTree* qtree);
 
-struct bh_qtree_query {
-    struct bh_qtree_entity** entities;
+struct BH_QTreeQuery {
+    struct BH_QTreeEntity** entities;
     size_t count;
     size_t capacity;
 };
 
-void BH_DeinitQuery(struct bh_qtree_query query);
+void BH_DeinitQuery(struct BH_QTreeQuery query);
 
-struct vec2 BH_BoxCentre(struct bh_bounding_box bb);
-struct vec2 BH_BoxDimensions(struct bh_bounding_box bb);
-struct bh_bounding_box BH_BoxToWorld(struct vec2 centre, struct bh_bounding_box dimensions);
+struct vec2 BH_BoxCentre(struct BH_BB bb);
+struct vec2 BH_BoxDimensions(struct BH_BB bb);
+struct BH_BB BH_BoxToWorld(struct vec2 centre, struct BH_BB dimensions);
