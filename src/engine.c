@@ -13,7 +13,7 @@
 #include "error_macro.h"
 #include "renderer.h"
 
-// #define RENDER_DEBUG_INFO
+#define RENDER_DEBUG_INFO
 
 void BH_SpawnEntity(struct bh_de_ll* entities, struct bh_sprite_entity entity) {
     if (entities->entities == NULL) {
@@ -40,7 +40,7 @@ void BH_DeinitEntities(struct bh_entity_ll* entities) {
     free(entities);
 }
 
-static void update_entity_transform(struct bh_sprite_entity* entity) {
+static void UpdateEntityTransform(struct bh_sprite_entity* entity) {
     m4 model_matrix;
     m4 translation;
 
@@ -52,7 +52,7 @@ static void update_entity_transform(struct bh_sprite_entity* entity) {
 }
 
 #ifdef RENDER_DEBUG_INFO
-static void render_bounding_box(
+static void RenderBB(
     struct bh_renderer* renderer, struct bh_bounding_box bb, struct vec2 offset, GLuint64 texture
 ) {
     struct bh_sprite hitbox_sprite = {
@@ -74,23 +74,23 @@ static void render_bounding_box(
 #endif
 
 #ifdef RENDER_DEBUG_INFO
-static void render_qtree(struct bh_renderer* renderer, struct bh_qtree* qtree, GLuint64 texture) {
+static void RenderQTree(struct bh_renderer* renderer, struct bh_qtree* qtree, GLuint64 texture) {
     if (qtree == NULL) {
         return;
     }
 
     if (BH_IsQTreeLeaf(qtree)) {
-        render_bounding_box(renderer, qtree->bb, (struct vec2){ 0.0f, 0.0f }, texture);
+        RenderBB(renderer, qtree->bb, (struct vec2){ 0.0f, 0.0f }, texture);
     } else {
-        render_qtree(renderer, qtree->top_left, texture);
-        render_qtree(renderer, qtree->top_right, texture);
-        render_qtree(renderer, qtree->bottom_left, texture);
-        render_qtree(renderer, qtree->bottom_right, texture);
+        RenderQTree(renderer, qtree->top_left, texture);
+        RenderQTree(renderer, qtree->top_right, texture);
+        RenderQTree(renderer, qtree->bottom_left, texture);
+        RenderQTree(renderer, qtree->bottom_right, texture);
     }
 }
 #endif
 
-static void tick_all_entities(
+static void TickEntities(
     struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
     struct bh_renderer* renderer
 ) {
@@ -106,18 +106,18 @@ static void tick_all_entities(
         );
 
         entity->callback(state, entity);
-        update_entity_transform(entity);
+        UpdateEntityTransform(entity);
         BH_RenderBatch(renderer, entity->sprite);
 
 #ifdef RENDER_DEBUG_INFO
-        render_bounding_box(renderer, entity->bb, entity->position, state->debug_texture);
+        RenderBB(renderer, entity->bb, entity->position, state->debug_texture);
 #endif
 
         node = node->next;
     }
 
 #ifdef RENDER_DEBUG_INFO
-    render_qtree(renderer, qtree, state->green_debug_texture);
+    RenderQTree(renderer, qtree, state->green_debug_texture);
 #endif
 
     BH_RenderText(renderer, 32.0f, 32.0f, 1.0f, "The quick brown fox jumps over the lazy dog.");
@@ -137,7 +137,7 @@ bool BH_DoEntitiesCollide(struct bh_sprite_entity* entity, struct bh_sprite_enti
 
 static bool GLOBAL_KEYS_HELD[GLFW_KEY_LAST + 1];
 
-static void glfw_key_cb(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void GLFWKeyCB(GLFWwindow* window, int key, int scancode, int action, int mods) {
     (void)window;
     (void)scancode;
     (void)mods;
@@ -159,7 +159,7 @@ bool BH_GetKey(int glfw_key) {
 bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
     if (!BH_InitRenderer(&ctx->renderer))
         return false;
-    glfwSetKeyCallback(ctx->renderer.window, glfw_key_cb);
+    glfwSetKeyCallback(ctx->renderer.window, GLFWKeyCB);
 
 #ifdef RENDER_DEBUG_INFO
     ctx->debug_texture =
@@ -185,18 +185,18 @@ bool BH_InitContext(struct bh_ctx* ctx, void* user_state, user_cb user_init) {
     return true;
 }
 
-static void begin_frame(struct bh_ctx* ctx) {
+static void BeginFrame(struct bh_ctx* ctx) {
     glfwSetTime(0.0);
     glfwPollEvents();
     BH_RendererBeginFrame(&ctx->renderer);
 }
 
-static void end_frame(struct bh_ctx* ctx) {
+static void EndFrame(struct bh_ctx* ctx) {
     BH_RendererEndFrame(&ctx->renderer);
     ctx->dt = (float)glfwGetTime();
 }
 
-static void delete_ctx(struct bh_ctx* ctx) {
+static void DeinitContext(struct bh_ctx* ctx) {
     BH_DeinitQTree(&ctx->entity_qtree);
     BH_DeinitEntities(ctx->entities.entities);
     BH_DeinitRenderer(&ctx->renderer);
@@ -204,9 +204,9 @@ static void delete_ctx(struct bh_ctx* ctx) {
 
 void BH_RunContext(struct bh_ctx* ctx) {
     while (!glfwWindowShouldClose(ctx->renderer.window)) {
-        begin_frame(ctx);
-        tick_all_entities(ctx, ctx->entities.entities, &ctx->entity_qtree, &ctx->renderer);
-        end_frame(ctx);
+        BeginFrame(ctx);
+        TickEntities(ctx, ctx->entities.entities, &ctx->entity_qtree, &ctx->renderer);
+        EndFrame(ctx);
     }
-    delete_ctx(ctx);
+    DeinitContext(ctx);
 }

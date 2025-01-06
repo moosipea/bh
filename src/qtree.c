@@ -31,7 +31,7 @@ struct bh_bounding_box BH_BoxToWorld(struct vec2 centre, struct bh_bounding_box 
     };
 }
 
-static struct bh_qtree* create_subdivision(struct vec2 top_left, struct vec2 bottom_right) {
+static struct bh_qtree* Subdivide(struct vec2 top_left, struct vec2 bottom_right) {
     struct bh_qtree* qtree = calloc(1, sizeof(struct bh_qtree));
 
     qtree->bb = (struct bh_bounding_box){
@@ -45,16 +45,16 @@ static struct bh_qtree* create_subdivision(struct vec2 top_left, struct vec2 bot
 static void qtree_subdivide(struct bh_qtree* qtree) {
     const struct vec2 centre = BH_BoxCentre(qtree->bb);
 
-    qtree->top_left = create_subdivision(qtree->bb.top_left, centre);
-    qtree->top_right = create_subdivision(
+    qtree->top_left = Subdivide(qtree->bb.top_left, centre);
+    qtree->top_right = Subdivide(
         (struct vec2){ centre.x, qtree->bb.top_left.y },
         (struct vec2){ qtree->bb.bottom_right.x, centre.y }
     );
-    qtree->bottom_left = create_subdivision(
+    qtree->bottom_left = Subdivide(
         (struct vec2){ qtree->bb.top_left.x, centre.y },
         (struct vec2){ centre.x, qtree->bb.bottom_right.y }
     );
-    qtree->bottom_right = create_subdivision(centre, qtree->bb.bottom_right);
+    qtree->bottom_right = Subdivide(centre, qtree->bb.bottom_right);
 
     for (size_t i = 0; i < qtree->element_count; i++) {
         BH_InsertQTree(qtree, qtree->elements[i]);
@@ -98,7 +98,7 @@ bool BH_InsertQTree(struct bh_qtree* qtree, struct bh_qtree_entity entity) {
 }
 
 #define QUERY_START_CAPACITY 32
-static struct bh_qtree_query query_init(void) {
+static struct bh_qtree_query InitQuery(void) {
     return (struct bh_qtree_query){
         .entities = calloc(QUERY_START_CAPACITY, sizeof(struct bh_qtree_entity*)),
         .count = 0,
@@ -107,7 +107,7 @@ static struct bh_qtree_query query_init(void) {
 }
 
 #define QUERY_GROW_FACTOR 2
-static void query_append(struct bh_qtree_query* query, struct bh_qtree_entity* entity) {
+static void QueryAppend(struct bh_qtree_query* query, struct bh_qtree_entity* entity) {
     if (query->count >= query->capacity) {
         query->capacity *= QUERY_GROW_FACTOR;
         query->entities =
@@ -116,9 +116,8 @@ static void query_append(struct bh_qtree_query* query, struct bh_qtree_entity* e
     query->entities[query->count++] = entity;
 }
 
-static void qtree_query_recursively(
-    struct bh_qtree* qtree, struct bh_bounding_box box, struct bh_qtree_query* query
-) {
+static void
+QueryRecursively(struct bh_qtree* qtree, struct bh_bounding_box box, struct bh_qtree_query* query) {
     if (qtree == NULL || query == NULL) {
         return;
     }
@@ -129,19 +128,19 @@ static void qtree_query_recursively(
 
     if (BH_IsQTreeLeaf(qtree)) {
         for (size_t i = 0; i < qtree->element_count; i++) {
-            query_append(query, &qtree->elements[i]);
+            QueryAppend(query, &qtree->elements[i]);
         }
     } else {
-        qtree_query_recursively(qtree->top_left, box, query);
-        qtree_query_recursively(qtree->top_right, box, query);
-        qtree_query_recursively(qtree->bottom_left, box, query);
-        qtree_query_recursively(qtree->bottom_right, box, query);
+        QueryRecursively(qtree->top_left, box, query);
+        QueryRecursively(qtree->top_right, box, query);
+        QueryRecursively(qtree->bottom_left, box, query);
+        QueryRecursively(qtree->bottom_right, box, query);
     }
 }
 
 struct bh_qtree_query BH_QueryQTree(struct bh_qtree* qtree, struct bh_bounding_box box) {
-    struct bh_qtree_query query = query_init();
-    qtree_query_recursively(qtree, box, &query);
+    struct bh_qtree_query query = InitQuery();
+    QueryRecursively(qtree, box, &query);
     return query;
 }
 
