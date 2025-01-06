@@ -81,6 +81,8 @@ void BH_RenderBatch(struct bh_renderer* batch, struct bh_sprite sprite);
 void BH_FinishBatch(struct bh_renderer* batch);
 void BH_DeinitBatch(struct bh_sprite_batch batch);
 
+void BH_RenderText(struct bh_renderer* renderer, float x0, float y0, float scale, const char* text);
+
 bool BH_InitRenderer(struct bh_renderer* renderer);
 void BH_RendererBeginFrame(struct bh_renderer* renderer);
 void BH_RendererEndFrame(struct bh_renderer* renderer);

@@ -494,6 +494,40 @@ bool BH_InitRenderer(struct bh_renderer* renderer) {
     return true;
 }
 
+void BH_RenderText(
+    struct bh_renderer* renderer, float x0, float y0, float scale, const char* text
+) {
+    for (size_t i = 0; text[i] != '\0'; i++) {
+        unsigned char ch = text[i];
+        struct bh_glyph glyph = renderer->font.glyphs[ch];
+
+        float x = x0 + (glyph.bearing_x + 0.5f * glyph.width) * scale;
+
+        /* I would like to have the origin in the top left corner
+         * but I am too stupid. For now, the origin shall lie in the
+         * bottom left corner instead! */
+        float y = y0 + (glyph.height * 0.5f - glyph.bearing_y) * scale;
+
+        float w = glyph.width * scale;
+        float h = glyph.height * scale;
+
+        if (glyph.texture != 0) {
+            struct bh_sprite sprite;
+            sprite.texture_handle = glyph.texture;
+            sprite.flags = BH_SPRITE_TEXT;
+
+            m4 translation;
+            m4_translation(translation, x, y, 0.0f);
+            m4_scale(sprite.transform, w / 2.0, h / 2.0, 1.0f);
+            m4_multiply(sprite.transform, translation);
+
+            BH_RenderBatch(renderer, sprite);
+        }
+
+        x0 += (glyph.advance >> 6) * scale;
+    }
+}
+
 void BH_RendererBeginFrame(struct bh_renderer* renderer) {
     int width, height;
     glfwGetFramebufferSize(renderer->window, &width, &height);

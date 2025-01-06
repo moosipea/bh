@@ -90,38 +90,6 @@ static void render_qtree(struct bh_renderer* renderer, struct bh_qtree* qtree, G
 }
 #endif
 
-static void render_text(struct bh_renderer* renderer, const char* text) {
-    float x0 = 100.0f;
-    float y0 = 100.0f;
-    float scale = 1.0f;
-
-    for (size_t i = 0; text[i] != '\0'; i++) {
-        unsigned char ch = text[i];
-        struct bh_glyph glyph = renderer->font.glyphs[ch];
-
-        float x = x0 + (glyph.bearing_x + 0.5f * glyph.width) * scale;
-        float y = y0 - (glyph.bearing_y - 0.5f * glyph.height) * scale;
-
-        float w = glyph.width * scale;
-        float h = glyph.height * scale;
-
-        if (glyph.texture != 0) {
-            struct bh_sprite sprite;
-            sprite.texture_handle = glyph.texture;
-            sprite.flags = BH_SPRITE_TEXT;
-
-            m4 translation;
-            m4_translation(translation, x, y, 0.0f);
-            m4_scale(sprite.transform, w / 2.0, h / 2.0, 1.0f);
-            m4_multiply(sprite.transform, translation);
-
-            BH_RenderBatch(renderer, sprite);
-        }
-
-        x0 += (glyph.advance >> 6) * scale;
-    }
-}
-
 static void tick_all_entities(
     struct bh_ctx* state, struct bh_entity_ll* entities, struct bh_qtree* qtree,
     struct bh_renderer* renderer
@@ -152,8 +120,7 @@ static void tick_all_entities(
     render_qtree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    // render_text(renderer, "The quick brown fox jumps over the lazy dog.");
-    render_text(renderer, "This is sample text");
+    BH_RenderText(renderer, 32.0f, 32.0f, 1.0f, "The quick brown fox jumps over the lazy dog.");
 
     BH_FinishBatch(renderer);
 
