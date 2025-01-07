@@ -120,7 +120,7 @@ static void TickEntities(
 #endif
 
     BH_RenderText(
-        renderer, 32.0f, 32.0f, 1.0f, (struct BH_Colour){ 1.0f, 1.0f, 0.0f, 1.0f },
+        renderer, 32.0f, 32.0f, 0.5f, (struct BH_Colour){ 1.0f, 1.0f, 0.0f, 1.0f },
         "The quick brown fox jumps over the lazy dog."
     );
 

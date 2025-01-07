@@ -488,7 +488,7 @@ bool BH_InitRenderer(struct BH_Renderer* renderer) {
         return false;
     if (!InitFreeType(renderer))
         return false;
-    if (!InitFont(renderer->ft, &renderer->font, 28, (void*)ASSET_arial, sizeof(ASSET_arial) - 1))
+    if (!InitFont(renderer->ft, &renderer->font, 28, (void*)ASSET_font, sizeof(ASSET_font) - 1))
         return false;
 
     renderer->batch = BH_InitBatch();
