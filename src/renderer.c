@@ -1,6 +1,7 @@
 #include "renderer.h"
 #include "matrix.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -279,6 +280,7 @@ void BH_RenderBatch(struct BH_Renderer* renderer, struct BH_Sprite sprite) {
     /* Insert sprite data into batch array */
     memcpy(batch->instance_data[batch->count].transform, sprite.transform, sizeof(m4));
     batch->instance_data[batch->count].flags = sprite.flags;
+    batch->instance_data[batch->count].colour = sprite.colour;
     batch->instance_textures[batch->count] = sprite.texture_handle;
     batch->count++;
 
@@ -463,11 +465,10 @@ static bool InitFreeType(struct BH_Renderer* renderer) {
 static void DeinitFreeType(FT_Library ft) { FT_Done_FreeType(ft); }
 
 static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
-    m4_scale(renderer->projection_matrix, 1.0f, 1.0f, 1.0f);
-
-    m4 projection;
-    m4_ortho(projection, 1.0f, renderer->width, 1.0f, renderer->height, 0.001f, 1000.0f);
-    m4_multiply(renderer->projection_matrix, projection);
+    printf("UpdateProjectionMatrix(%d, %d)\n", renderer->width, renderer->height);
+    m4_ortho(
+        renderer->projection_matrix, 1.0f, renderer->width, 1.0f, renderer->height, 0.001f, 1000.0f
+    );
 
     glUniformMatrix4fv(
         glGetUniformLocation(renderer->program, "projection_matrix"), 1, GL_FALSE,
@@ -476,6 +477,8 @@ static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
 }
 
 bool BH_InitRenderer(struct BH_Renderer* renderer) {
+    assert(sizeof(struct BH_InstanceData) % 16 == 0);
+
     renderer->width = 640;
     renderer->height = 480;
 
@@ -495,7 +498,8 @@ bool BH_InitRenderer(struct BH_Renderer* renderer) {
 }
 
 void BH_RenderText(
-    struct BH_Renderer* renderer, float x0, float y0, float scale, const char* text
+    struct BH_Renderer* renderer, float x0, float y0, float scale, struct BH_Colour colour,
+    const char* text
 ) {
     for (size_t i = 0; text[i] != '\0'; i++) {
         unsigned char ch = text[i];
@@ -514,7 +518,8 @@ void BH_RenderText(
         if (glyph.texture != 0) {
             struct BH_Sprite sprite;
             sprite.texture_handle = glyph.texture;
-            sprite.flags = BH_SPRITE_TEXT;
+            sprite.colour = colour;
+            sprite.flags = BH_SPRITE_TEXT | BH_SPRITE_HAS_COLOUR;
 
             m4 translation;
             m4_translation(translation, x, y, 0.0f);

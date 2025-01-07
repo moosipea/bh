@@ -13,7 +13,7 @@
 #include "error_macro.h"
 #include "renderer.h"
 
-#define RENDER_DEBUG_INFO
+// #define RENDER_DEBUG_INFO
 
 void BH_SpawnEntity(struct BH_DELL* entities, struct BH_SpriteEntity entity) {
     if (entities->entities == NULL) {
@@ -119,7 +119,10 @@ static void TickEntities(
     RenderQTree(renderer, qtree, state->green_debug_texture);
 #endif
 
-    BH_RenderText(renderer, 32.0f, 32.0f, 1.0f, "The quick brown fox jumps over the lazy dog.");
+    BH_RenderText(
+        renderer, 32.0f, 32.0f, 1.0f, (struct BH_Colour){ 1.0f, 1.0f, 0.0f, 1.0f },
+        "The quick brown fox jumps over the lazy dog."
+    );
 
     BH_FinishBatch(renderer);
 

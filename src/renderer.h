@@ -32,12 +32,14 @@ struct BH_Textures {
 GLuint64 BH_LoadTexture(struct BH_Textures* textures, void* png_data, size_t size);
 void BH_DeinitTextures(struct BH_Textures textures);
 
-enum BH_SpriteFlag { BH_SPRITE_TEXT = 1 << 0 };
+enum BH_SpriteFlag { BH_SPRITE_TEXT = 1 << 0, BH_SPRITE_HAS_COLOUR = 1 << 1 };
 
+/* Must be aligned to 16 bytes! */
 struct BH_InstanceData {
-    m4 transform;
-    GLuint flags;
-    uint32_t padding[3];
+    m4 transform;            /* 64 bytes */
+    struct BH_Colour colour; /* 16 bytes */
+    GLuint flags;            /* 4 byte */
+    uint32_t padding[3];     /* 12 bytes */
 };
 
 struct BH_SpriteBatch {
@@ -81,7 +83,10 @@ void BH_RenderBatch(struct BH_Renderer* batch, struct BH_Sprite sprite);
 void BH_FinishBatch(struct BH_Renderer* batch);
 void BH_DeinitBatch(struct BH_SpriteBatch batch);
 
-void BH_RenderText(struct BH_Renderer* renderer, float x0, float y0, float scale, const char* text);
+void BH_RenderText(
+    struct BH_Renderer* renderer, float x0, float y0, float scale, struct BH_Colour colour,
+    const char* text
+);
 
 bool BH_InitRenderer(struct BH_Renderer* renderer);
 void BH_RendererBeginFrame(struct BH_Renderer* renderer);

@@ -7,6 +7,7 @@ uniform mat4 projection_matrix;
 
 struct sprite {
     mat4 transform;
+    vec4 colour;
     uint flags;
 };
 
@@ -17,11 +18,16 @@ layout(binding = 2, std430) readonly buffer ssbo1 {
 out vec2 fUVs;
 flat out uint fInstance;
 flat out uint fFlags;
+flat out vec4 fColour;
 
 void main() {
-    gl_Position = projection_matrix * sprite_data[gl_InstanceID].transform * vec4(aPos, 1.0);
+    sprite sp = sprite_data[gl_InstanceID];
+
+    gl_Position = projection_matrix * sp.transform * vec4(aPos, 1.0);
+
     fUVs = aUVs;
     fInstance = gl_InstanceID;
-    fFlags = sprite_data[gl_InstanceID].flags;
+    fFlags = sp.flags;
+    fColour = sp.colour;
 }
 

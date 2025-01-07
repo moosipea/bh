@@ -7,10 +7,15 @@ struct BH_Context;
 struct BH_SpriteEntity;
 typedef void (*BH_SpriteEntityCB)(struct BH_Context* state, struct BH_SpriteEntity* entity);
 
+struct BH_Colour {
+    float r, g, b, a;
+};
+
 struct BH_Sprite {
     m4 transform;
     GLuint64 texture_handle;
     GLuint flags;
+    struct BH_Colour colour;
 };
 
 struct BH_BB {
