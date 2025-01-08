@@ -476,6 +476,8 @@ InitFramebufferColorAttachment(struct BH_Framebuffer* framebuffer, int width, in
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer->color_buffer, 0
@@ -516,6 +518,14 @@ static bool InitFramebuffer(struct BH_Renderer* renderer) {
     }
 
     return true;
+}
+
+static void ResizeFramebuffer(struct BH_Framebuffer* framebuffer, int width, int height) {
+    /* Resize color buffer */
+    glBindTexture(GL_TEXTURE_2D, framebuffer->color_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    /* TODO: renderbuffer cannot be resized? */
 }
 
 bool BH_InitRenderer(struct BH_Renderer* renderer) {
@@ -585,7 +595,9 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
         renderer->width = width;
         renderer->height = height;
         glViewport(0, 0, renderer->width, renderer->height);
-        UpdateProjectionMatrix(renderer);
+        /* Needs to be applied when the main shader is active */
+        // UpdateProjectionMatrix(renderer);
+        ResizeFramebuffer(&renderer->framebuffer, renderer->width, renderer->height);
     }
 
     /* Setup for rendering to FBO */
