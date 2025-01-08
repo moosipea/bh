@@ -103,8 +103,6 @@ struct BH_MeshHandle BH_UploadMesh(const GLfloat* vertices, size_t count) {
         1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat))
     );
 
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(0);
     glBindVertexArray(0);
 
     return res;
@@ -248,22 +246,21 @@ static GLuint CreateSSBO(const void* buffer, size_t size) {
     return id;
 }
 
+/* For use with GL_TRIANGLE_FAN */
+/* Positions and UV coords */
+// clang-format off
+static const GLfloat QUAD_VERTICES[] = {
+    -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
+     1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
+     1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f, 0.0f, 0.0f
+};
+// clang-format on
+
 struct BH_SpriteBatch BH_InitBatch(void) {
     struct BH_SpriteBatch res = { 0 };
 
-    /* For use with GL_TRIANGLE_FAN */
-    /* Positions and UV coords */
-
-    // clang-format off
-    const GLfloat vertices[] = {
-        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-         1.0f, -1.0f, 0.0f, 1.0f, 1.0f,
-         1.0f,  1.0f, 0.0f, 1.0f, 0.0f,
-        -1.0f,  1.0f, 0.0f, 0.0f, 0.0f
-    };
-    // clang-format on
-
-    res.mesh = BH_UploadMesh(vertices, sizeof(vertices) / sizeof(vertices[0]));
+    res.mesh = BH_UploadMesh(QUAD_VERTICES, sizeof(QUAD_VERTICES) / sizeof(QUAD_VERTICES[0]));
     res.instances_ssbo = CreateSSBO(res.instance_data, sizeof(res.instance_data));
     res.textures_ssbo = CreateSSBO(res.instance_textures, sizeof(res.instance_textures));
 
@@ -291,16 +288,10 @@ void BH_RenderBatch(struct BH_Renderer* renderer, struct BH_Sprite sprite) {
 }
 
 static void BatchDrawcall(struct BH_Renderer* renderer) {
-    glUseProgram(renderer->program);
+    glUseProgram(renderer->main_program);
     glBindVertexArray(renderer->batch.mesh.vao_handle);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
 
     glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, renderer->batch.count);
-
-    glDisableVertexAttribArray(1);
-    glDisableVertexAttribArray(0);
-    glUseProgram(0);
 }
 
 void BH_FinishBatch(struct BH_Renderer* renderer) {
@@ -379,9 +370,10 @@ static bool InitGL(struct BH_Renderer* renderer) {
 }
 
 static bool InitShaders(struct BH_Renderer* renderer) {
-    renderer->program = BH_InitProgram((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
-    if (renderer->program) {
-        glUseProgram(renderer->program);
+    renderer->main_program =
+        BH_InitProgram((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
+    if (renderer->main_program) {
+        glUseProgram(renderer->main_program);
         return true;
     }
     return false;
@@ -471,9 +463,55 @@ static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
     );
 
     glUniformMatrix4fv(
-        glGetUniformLocation(renderer->program, "projection_matrix"), 1, GL_FALSE,
+        glGetUniformLocation(renderer->main_program, "projection_matrix"), 1, GL_FALSE,
         (const GLfloat*)renderer->projection_matrix
     );
+}
+
+/* TODO: handle window resizing */
+static bool InitFramebuffer(struct BH_Renderer* renderer) {
+    glGenFramebuffers(1, &renderer->framebuffer.fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
+
+    /* Color attachment */
+    glGenTextures(1, &renderer->framebuffer.color_buffer);
+    glBindTexture(GL_TEXTURE_2D, renderer->framebuffer.color_buffer);
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, renderer->width, renderer->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+        NULL
+    );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderer->framebuffer.color_buffer, 0
+    );
+
+    /* RBO (depth and stencil attachment) */
+    glGenRenderbuffers(1, &renderer->framebuffer.rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderer->framebuffer.rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, renderer->width, renderer->height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferRenderbuffer(
+        GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderer->framebuffer.rbo
+    );
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        error("Framebuffer is not complete");
+        return false;
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    renderer->framebuffer.post_program =
+        BH_InitProgram((const GLchar*)ASSET_vertex_post, (const GLchar*)ASSET_fragment_post);
+    if (!renderer->framebuffer.post_program) {
+        return false;
+    }
+
+    return true;
 }
 
 bool BH_InitRenderer(struct BH_Renderer* renderer) {
@@ -485,6 +523,8 @@ bool BH_InitRenderer(struct BH_Renderer* renderer) {
     if (!InitGL(renderer))
         return false;
     if (!InitShaders(renderer))
+        return false;
+    if (!InitFramebuffer(renderer))
         return false;
     if (!InitFreeType(renderer))
         return false;
@@ -544,19 +584,37 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
         UpdateProjectionMatrix(renderer);
     }
 
+    /* Setup for rendering to FBO */
+    glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
 }
 
-void BH_RendererEndFrame(struct BH_Renderer* renderer) { glfwSwapBuffers(renderer->window); }
+void BH_RendererEndFrame(struct BH_Renderer* renderer) {
+    /* Now render to the screen */
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    /* Draw contents of framebuffer to the screen */
+    glUseProgram(renderer->framebuffer.post_program);
+    glBindVertexArray(renderer->batch.mesh.vao_handle
+    ); /* Reuse mesh from the batch, as it is just a quad */
+    glBindTexture(GL_TEXTURE_2D, renderer->framebuffer.color_buffer);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glfwSwapBuffers(renderer->window);
+}
 
 void BH_DeinitRenderer(struct BH_Renderer* renderer) {
     DeinitFont(renderer->font);
     DeinitFreeType(renderer->ft);
 
+    glDeleteFramebuffers(1, &renderer->framebuffer.fbo);
     BH_DeinitTextures(renderer->textures);
     BH_DeinitBatch(renderer->batch);
-    BH_DeinitProgram(renderer->program);
+    BH_DeinitProgram(renderer->main_program);
 
     glfwDestroyWindow(renderer->window);
     glfwTerminate();
