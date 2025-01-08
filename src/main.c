@@ -29,13 +29,13 @@ static void spawn_test_entities(struct BH_Context* ctx) {
 
         struct BH_Sprite sprite = { 0 };
         sprite.texture_handle = star_texture;
-        m4_identity(sprite.transform);
 
         // clang-format off
         struct BH_SpriteEntity entity = {
             .sprite = sprite,
             .position = { ctx->renderer.width * uniform_rand(), ctx->renderer.height * uniform_rand() },
             .scale = { 32.0f, 32.0f },
+            .depth = 2.0f,
             .bb = {
                 { -12.0f, -12.0f },
                 { 12.0f, 12.0f },
@@ -109,6 +109,7 @@ static void spawn_player_entity(struct BH_Context* ctx) {
         .sprite = sprite,
         .position = { ctx->renderer.width / 2.0f, ctx->renderer.height / 2.0f },
         .scale = { 64.0f, 64.0f },
+        .depth = 1.0f,
         .bb = {
             { -32.0f, -32.0f },
             { 32.0f, 32.0f },
@@ -129,8 +130,8 @@ static void spawn_player_entity(struct BH_Context* ctx) {
 bool user_init(struct BH_Context* ctx, void* state) {
     (void)state;
 
-    // spawn_test_entities(ctx);
-    // spawn_player_entity(ctx);
+    spawn_test_entities(ctx);
+    spawn_player_entity(ctx);
 
     return true;
 }

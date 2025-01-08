@@ -608,7 +608,7 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
     /* Setup for rendering to FBO */
     glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
     glViewport(0, 0, renderer->framebuffer.width, renderer->framebuffer.height);
-    glClearColor(0.1, 0.2, 0.3, 1.0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 

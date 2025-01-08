@@ -30,9 +30,12 @@ enum BH_EntityType {
 
 struct BH_SpriteEntity {
     struct BH_Sprite sprite;
+
     struct vec2 position;
     struct vec2 scale;
     float rotation;
+    float depth;
+
     struct BH_BB bb;
 
     enum BH_EntityType type;

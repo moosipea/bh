@@ -45,7 +45,7 @@ static void UpdateEntityTransform(struct BH_SpriteEntity* entity) {
     m4 translation;
 
     m4_scale(model_matrix, entity->scale.x, entity->scale.y, 1.0f);
-    m4_translation(translation, entity->position.x, entity->position.y, 0.0f);
+    m4_translation(translation, entity->position.x, entity->position.y, entity->depth);
     m4_multiply(model_matrix, translation);
 
     memcpy(entity->sprite.transform, model_matrix, sizeof(m4));
