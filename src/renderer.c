@@ -289,9 +289,7 @@ void BH_RenderBatch(struct BH_Renderer* renderer, struct BH_Sprite sprite) {
 }
 
 static void BatchDrawcall(struct BH_Renderer* renderer) {
-    glUseProgram(renderer->main_program);
     glBindVertexArray(renderer->batch.mesh.vao_handle);
-
     glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, renderer->batch.count);
 }
 
@@ -373,11 +371,19 @@ static bool InitGL(struct BH_Renderer* renderer) {
 static bool InitShaders(struct BH_Renderer* renderer) {
     renderer->main_program =
         BH_InitProgram((const GLchar*)ASSET_vertex, (const GLchar*)ASSET_fragment);
-    if (renderer->main_program) {
-        glUseProgram(renderer->main_program);
-        return true;
+    if (!renderer->main_program) {
+        error("Couldn't load main shader");
+        return false;
     }
-    return false;
+
+    renderer->post_program =
+        BH_InitProgram((const GLchar*)ASSET_vertex_post, (const GLchar*)ASSET_fragment_post);
+    if (!renderer->post_program) {
+        error("Couldn't load post processing shader");
+        return false;
+    }
+
+    return true;
 }
 
 static GLuint UploadGlyphTexture(FT_Bitmap bitmap) {
@@ -458,7 +464,6 @@ static bool InitFreeType(struct BH_Renderer* renderer) {
 static void DeinitFreeType(FT_Library ft) { FT_Done_FreeType(ft); }
 
 static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
-    printf("UpdateProjectionMatrix(%d, %d)\n", renderer->width, renderer->height);
     m4_ortho(
         renderer->projection_matrix, 1.0f, renderer->width, 1.0f, renderer->height, 0.001f, 1000.0f
     );
@@ -500,16 +505,15 @@ static void InitFramebufferDepthStencil(struct BH_Framebuffer* framebuffer) {
     );
 }
 
-/* TODO: handle window resizing */
-static bool InitFramebuffer(struct BH_Renderer* renderer) {
-    renderer->framebuffer.width = renderer->width;
-    renderer->framebuffer.height = renderer->height;
+static bool InitFramebuffer(struct BH_Framebuffer* framebuffer, int width, int height) {
+    framebuffer->width = width;
+    framebuffer->height = height;
 
-    glGenFramebuffers(1, &renderer->framebuffer.fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
+    glGenFramebuffers(1, &framebuffer->fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer->fbo);
 
-    InitFramebufferColorAttachment(&renderer->framebuffer);
-    InitFramebufferDepthStencil(&renderer->framebuffer);
+    InitFramebufferColorAttachment(framebuffer);
+    InitFramebufferDepthStencil(framebuffer);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         error("Framebuffer is not complete");
@@ -518,35 +522,30 @@ static bool InitFramebuffer(struct BH_Renderer* renderer) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    renderer->framebuffer.post_program =
-        BH_InitProgram((const GLchar*)ASSET_vertex_post, (const GLchar*)ASSET_fragment_post);
-    if (!renderer->framebuffer.post_program) {
-        error("Couldn't load post processing shader");
-        return false;
-    }
-
     return true;
 }
 
-static void ResizeFramebuffer(struct BH_Framebuffer* framebuffer, int width, int height) {
-    /* Resize color buffer */
-    glBindTexture(GL_TEXTURE_2D, framebuffer->color_buffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+static void DeinitFramebuffer(struct BH_Framebuffer framebuffer) {
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.fbo);
 
-    /* TODO: renderbuffer cannot be resized? */
+    glDeleteTextures(1, &framebuffer.color_buffer);
+    glDeleteRenderbuffers(1, &framebuffer.rbo);
+    glDeleteFramebuffers(1, &framebuffer.fbo);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 bool BH_InitRenderer(struct BH_Renderer* renderer) {
     assert(sizeof(struct BH_InstanceData) % 16 == 0);
 
-    renderer->width = 640;
-    renderer->height = 480;
+    renderer->width = 1280;
+    renderer->height = 720;
 
     if (!InitGL(renderer))
         return false;
     if (!InitShaders(renderer))
         return false;
-    if (!InitFramebuffer(renderer))
+    if (!InitFramebuffer(&renderer->framebuffer, renderer->width, renderer->height))
         return false;
     if (!InitFreeType(renderer))
         return false;
@@ -602,17 +601,19 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
     if (width != renderer->width || height != renderer->height) {
         renderer->width = width;
         renderer->height = height;
-        /* Needs to be applied when the main shader is active */
-        // UpdateProjectionMatrix(renderer);
-        // ResizeFramebuffer(&renderer->framebuffer, renderer->width, renderer->height);
+        DeinitFramebuffer(renderer->framebuffer);
+        InitFramebuffer(&renderer->framebuffer, renderer->width, renderer->height);
     }
 
     /* Setup for rendering to FBO */
     glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
     glViewport(0, 0, renderer->framebuffer.width, renderer->framebuffer.height);
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(0.1, 0.2, 0.3, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+
+    glUseProgram(renderer->main_program);
+    UpdateProjectionMatrix(renderer);
 }
 
 void BH_RendererEndFrame(struct BH_Renderer* renderer) {
@@ -624,11 +625,13 @@ void BH_RendererEndFrame(struct BH_Renderer* renderer) {
     glDisable(GL_DEPTH_TEST);
 
     /* Draw contents of framebuffer to the screen */
-    glUseProgram(renderer->framebuffer.post_program);
-    glBindVertexArray(renderer->batch.mesh.vao_handle
-    ); /* Reuse mesh from the batch, as it is just a quad */
+    glUseProgram(renderer->post_program);
+
+    /* Reuse mesh from the batch, as it is just a quad */
+    glBindVertexArray(renderer->batch.mesh.vao_handle);
     glBindTexture(GL_TEXTURE_2D, renderer->framebuffer.color_buffer);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
     glfwSwapBuffers(renderer->window);
 }
 

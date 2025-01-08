@@ -159,8 +159,11 @@ bool BH_GetKey(int glfw_key) {
 }
 
 bool BH_InitContext(struct BH_Context* ctx, void* user_state, BH_UserCB user_init) {
-    if (!BH_InitRenderer(&ctx->renderer))
+    if (!BH_InitRenderer(&ctx->renderer)) {
+        error("Renderer initialisation failed");
         return false;
+    }
+
     glfwSetKeyCallback(ctx->renderer.window, GLFWKeyCB);
 
 #ifdef RENDER_DEBUG_INFO

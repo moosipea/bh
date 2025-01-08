@@ -70,7 +70,6 @@ struct BH_Framebuffer {
     GLuint fbo;
     GLuint color_buffer;
     GLuint rbo;
-    GLuint post_program;
 };
 
 struct BH_Renderer {
@@ -78,6 +77,7 @@ struct BH_Renderer {
     int width, height;
 
     GLuint main_program;
+    GLuint post_program;
     m4 projection_matrix;
 
     struct BH_Framebuffer framebuffer;
