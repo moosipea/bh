@@ -65,6 +65,13 @@ struct BH_Font {
     struct BH_Textures textures;
 };
 
+struct BH_Framebuffer {
+    GLuint fbo;
+    GLuint color_buffer;
+    GLuint rbo;
+    GLuint post_program;
+};
+
 struct BH_Renderer {
     GLFWwindow* window;
     int width, height;
@@ -72,12 +79,7 @@ struct BH_Renderer {
     GLuint main_program;
     m4 projection_matrix;
 
-    struct {
-        GLuint fbo;
-        GLuint color_buffer;
-        GLuint rbo;
-        GLuint post_program;
-    } framebuffer;
+    struct BH_Framebuffer framebuffer;
 
     struct BH_Textures textures;
     struct BH_SpriteBatch batch;

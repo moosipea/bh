@@ -468,35 +468,38 @@ static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
     );
 }
 
+static void
+InitFramebufferColorAttachment(struct BH_Framebuffer* framebuffer, int width, int height) {
+    glGenTextures(1, &framebuffer->color_buffer);
+    glBindTexture(GL_TEXTURE_2D, framebuffer->color_buffer);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, framebuffer->color_buffer, 0
+    );
+}
+
+static void InitFramebufferDepthStencil(struct BH_Framebuffer* framebuffer, int width, int height) {
+    glGenRenderbuffers(1, &framebuffer->rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferRenderbuffer(
+        GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, framebuffer->rbo
+    );
+}
+
 /* TODO: handle window resizing */
 static bool InitFramebuffer(struct BH_Renderer* renderer) {
     glGenFramebuffers(1, &renderer->framebuffer.fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
 
-    /* Color attachment */
-    glGenTextures(1, &renderer->framebuffer.color_buffer);
-    glBindTexture(GL_TEXTURE_2D, renderer->framebuffer.color_buffer);
-
-    glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, renderer->width, renderer->height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-        NULL
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, renderer->framebuffer.color_buffer, 0
-    );
-
-    /* RBO (depth and stencil attachment) */
-    glGenRenderbuffers(1, &renderer->framebuffer.rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, renderer->framebuffer.rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, renderer->width, renderer->height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderer->framebuffer.rbo
-    );
+    InitFramebufferColorAttachment(&renderer->framebuffer, renderer->width, renderer->height);
+    InitFramebufferDepthStencil(&renderer->framebuffer, renderer->width, renderer->height);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         error("Framebuffer is not complete");
@@ -508,6 +511,7 @@ static bool InitFramebuffer(struct BH_Renderer* renderer) {
     renderer->framebuffer.post_program =
         BH_InitProgram((const GLchar*)ASSET_vertex_post, (const GLchar*)ASSET_fragment_post);
     if (!renderer->framebuffer.post_program) {
+        error("Couldn't load post processing shader");
         return false;
     }
 
