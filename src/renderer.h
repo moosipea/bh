@@ -66,6 +66,7 @@ struct BH_Font {
 };
 
 struct BH_Framebuffer {
+    int width, height;
     GLuint fbo;
     GLuint color_buffer;
     GLuint rbo;

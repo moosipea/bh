@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define SPNG_STATIC
@@ -468,12 +469,14 @@ static void UpdateProjectionMatrix(struct BH_Renderer* renderer) {
     );
 }
 
-static void
-InitFramebufferColorAttachment(struct BH_Framebuffer* framebuffer, int width, int height) {
+static void InitFramebufferColorAttachment(struct BH_Framebuffer* framebuffer) {
     glGenTextures(1, &framebuffer->color_buffer);
     glBindTexture(GL_TEXTURE_2D, framebuffer->color_buffer);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, framebuffer->width, framebuffer->height, 0, GL_RGB,
+        GL_UNSIGNED_BYTE, NULL
+    );
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -484,10 +487,12 @@ InitFramebufferColorAttachment(struct BH_Framebuffer* framebuffer, int width, in
     );
 }
 
-static void InitFramebufferDepthStencil(struct BH_Framebuffer* framebuffer, int width, int height) {
+static void InitFramebufferDepthStencil(struct BH_Framebuffer* framebuffer) {
     glGenRenderbuffers(1, &framebuffer->rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, framebuffer->rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glRenderbufferStorage(
+        GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, framebuffer->width, framebuffer->height
+    );
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(
@@ -497,11 +502,14 @@ static void InitFramebufferDepthStencil(struct BH_Framebuffer* framebuffer, int 
 
 /* TODO: handle window resizing */
 static bool InitFramebuffer(struct BH_Renderer* renderer) {
+    renderer->framebuffer.width = renderer->width;
+    renderer->framebuffer.height = renderer->height;
+
     glGenFramebuffers(1, &renderer->framebuffer.fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
 
-    InitFramebufferColorAttachment(&renderer->framebuffer, renderer->width, renderer->height);
-    InitFramebufferDepthStencil(&renderer->framebuffer, renderer->width, renderer->height);
+    InitFramebufferColorAttachment(&renderer->framebuffer);
+    InitFramebufferDepthStencil(&renderer->framebuffer);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         error("Framebuffer is not complete");
@@ -594,14 +602,14 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
     if (width != renderer->width || height != renderer->height) {
         renderer->width = width;
         renderer->height = height;
-        glViewport(0, 0, renderer->width, renderer->height);
         /* Needs to be applied when the main shader is active */
         // UpdateProjectionMatrix(renderer);
-        ResizeFramebuffer(&renderer->framebuffer, renderer->width, renderer->height);
+        // ResizeFramebuffer(&renderer->framebuffer, renderer->width, renderer->height);
     }
 
     /* Setup for rendering to FBO */
     glBindFramebuffer(GL_FRAMEBUFFER, renderer->framebuffer.fbo);
+    glViewport(0, 0, renderer->framebuffer.width, renderer->framebuffer.height);
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -610,6 +618,7 @@ void BH_RendererBeginFrame(struct BH_Renderer* renderer) {
 void BH_RendererEndFrame(struct BH_Renderer* renderer) {
     /* Now render to the screen */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, renderer->width, renderer->height);
     glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glDisable(GL_DEPTH_TEST);
